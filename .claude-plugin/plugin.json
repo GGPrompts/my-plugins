@@ -1,0 +1,19 @@
+{
+  "name": "my-plugins",
+  "version": "2.1.0",
+  "description": "Personal Claude Code plugin collection - slash commands, skills, hooks, and productivity tools",
+  "author": {
+    "name": "matt"
+  },
+  "license": "MIT",
+  "keywords": [
+    "productivity",
+    "ai",
+    "gemini",
+    "multimodal",
+    "prompt-engineering",
+    "tmux",
+    "statusline"
+  ],
+  "hooks": "./hooks/hooks.json"
+}
