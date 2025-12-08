@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Personal Claude Code plugin collection - slash commands, skills, hooks, and productivity tools",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "plugins": [
     {
@@ -34,7 +34,7 @@
     },
     {
       "name": "brief",
-      "source": "./.claude/commands/brief.md",
+      "source": "./.claude/commands/brief",
       "type": "command",
       "description": "Generate spoken summaries of recent Claude Code activity using Gemini 2.5 Flash with Edge TTS",
       "version": "1.0.0",
@@ -46,7 +46,7 @@
     },
     {
       "name": "codex",
-      "source": "./.claude/commands/codex.md",
+      "source": "./.claude/commands/codex",
       "type": "command",
       "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)",
       "version": "1.0.0",
@@ -58,7 +58,7 @@
     },
     {
       "name": "gemini",
-      "source": "./.claude/commands/gemini.md",
+      "source": "./.claude/commands/gemini",
       "type": "command",
       "description": "Query Gemini for real-time info, web research, or fast second opinions",
       "version": "1.0.0",
@@ -70,7 +70,7 @@
     },
     {
       "name": "handoff",
-      "source": "./.claude/commands/handoff.md",
+      "source": "./.claude/commands/handoff",
       "type": "command",
       "description": "Generate a handoff summary and copy to clipboard for new session",
       "version": "1.0.0",
@@ -82,7 +82,7 @@
     },
     {
       "name": "pmux",
-      "source": "./.claude/commands/pmux.md",
+      "source": "./.claude/commands/pmux",
       "type": "command",
       "description": "Interactive Prompt Engineer with tmux send-keys - directly send prompts to Claude Code sessions",
       "version": "1.0.0",
@@ -94,7 +94,7 @@
     },
     {
       "name": "pmux2",
-      "source": "./.claude/commands/pmux2.md",
+      "source": "./.claude/commands/pmux2",
       "type": "command",
       "description": "Interactive Prompt Engineer v2 with tmux send-keys - enhanced prompt refinement workflow",
       "version": "1.0.0",
@@ -106,7 +106,7 @@
     },
     {
       "name": "prompt-engineer",
-      "source": "./.claude/commands/prompt-engineer.md",
+      "source": "./.claude/commands/prompt-engineer",
       "type": "command",
       "description": "Interactive Prompt Engineer - collaborative refinement with best practices and clipboard copy",
       "version": "1.0.0",
@@ -118,7 +118,7 @@
     },
     {
       "name": "wipe",
-      "source": "./.claude/commands/wipe.md",
+      "source": "./.claude/commands/wipe",
       "type": "command",
       "description": "Generate handoff, clear context, and auto-continue in fresh session",
       "version": "1.0.0",
@@ -130,7 +130,7 @@
     },
     {
       "name": "validate-plan",
-      "source": "./.claude/commands/validate-plan.md",
+      "source": "./.claude/commands/validate-plan",
       "type": "command",
       "description": "Project Plan Validation & Enrichment System with multi-agent review and research",
       "version": "1.0.0",
