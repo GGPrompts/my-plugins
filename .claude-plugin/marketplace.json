@@ -4,8 +4,8 @@
     "name": "matt"
   },
   "metadata": {
-    "description": "Personal Claude Code plugin collection - state tracking, audio summaries, and multimodal AI",
-    "version": "1.0.0"
+    "description": "Personal Claude Code plugin collection - slash commands, skills, hooks, and productivity tools",
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -40,6 +40,94 @@
       },
       "category": "ai",
       "tags": ["gemini", "audio", "video", "image", "pdf", "multimodal", "skills"]
+    },
+    {
+      "name": "codex",
+      "source": "./plugins/codex",
+      "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "ai",
+      "tags": ["codex", "openai", "debugging", "analysis", "commands"]
+    },
+    {
+      "name": "gemini",
+      "source": "./plugins/gemini",
+      "description": "Query Gemini for real-time info, web research, or fast second opinions",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "ai",
+      "tags": ["gemini", "google", "web", "search", "research", "commands"]
+    },
+    {
+      "name": "handoff",
+      "source": "./plugins/handoff",
+      "description": "Generate a handoff summary and copy to clipboard for new session",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["handoff", "context", "clipboard", "session", "commands"]
+    },
+    {
+      "name": "pmux",
+      "source": "./plugins/pmux",
+      "description": "Interactive Prompt Engineer with tmux send-keys - directly send prompts to Claude Code sessions",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["prompt", "engineering", "tmux", "send-keys", "commands"]
+    },
+    {
+      "name": "pmux2",
+      "source": "./plugins/pmux2",
+      "description": "Interactive Prompt Engineer v2 with tmux send-keys - enhanced prompt refinement workflow",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["prompt", "engineering", "tmux", "send-keys", "commands"]
+    },
+    {
+      "name": "prompt-engineer",
+      "source": "./plugins/prompt-engineer",
+      "description": "Interactive Prompt Engineer - collaborative refinement with best practices and clipboard copy",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["prompt", "engineering", "clipboard", "refinement", "commands"]
+    },
+    {
+      "name": "wipe",
+      "source": "./plugins/wipe",
+      "description": "Generate handoff, clear context, and auto-continue in fresh session",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["wipe", "clear", "handoff", "context", "tmux", "commands"]
+    },
+    {
+      "name": "validate-plan",
+      "source": "./plugins/validate-plan",
+      "description": "Project Plan Validation & Enrichment System with multi-agent review and research",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["plan", "validation", "review", "research", "multi-agent", "commands"]
     }
   ]
 }
