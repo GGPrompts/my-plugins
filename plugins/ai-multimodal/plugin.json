@@ -1,0 +1,11 @@
+{
+  "name": "ai-multimodal",
+  "version": "1.0.0",
+  "description": "Process and generate multimedia content using Google Gemini API - audio, images, video, documents, and image generation",
+  "author": {
+    "name": "matt"
+  },
+  "license": "MIT",
+  "keywords": ["gemini", "audio", "video", "image", "pdf", "multimodal", "ai", "tts"],
+  "skills": "./SKILL.md"
+}

@@ -1,0 +1,45 @@
+{
+  "name": "my-plugins",
+  "owner": {
+    "name": "matt"
+  },
+  "metadata": {
+    "description": "Personal Claude Code plugin collection - state tracking, audio summaries, and multimodal AI",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "state-tracker",
+      "source": "./plugins/state-tracker",
+      "description": "Track Claude Code session state (status, current tool, timing) and display in statusline",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["hooks", "statusline", "monitoring"]
+    },
+    {
+      "name": "audio-brief",
+      "source": "./plugins/audio-brief",
+      "description": "Generate spoken summaries of recent Claude Code activity using Gemini 2.5 Flash with Edge TTS",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "productivity",
+      "tags": ["audio", "tts", "summary", "gemini", "commands"]
+    },
+    {
+      "name": "ai-multimodal",
+      "source": "./plugins/ai-multimodal",
+      "description": "Process and generate multimedia content using Google Gemini API - audio, images, video, documents, and image generation",
+      "version": "1.0.0",
+      "author": {
+        "name": "matt"
+      },
+      "category": "ai",
+      "tags": ["gemini", "audio", "video", "image", "pdf", "multimodal", "skills"]
+    }
+  ]
+}
