@@ -109,6 +109,35 @@ case "$HOOK_TYPE" in
         # Store args as string to avoid --argjson issues
         TOOL_ARGS_STR=$(echo "$STDIN_DATA" | jq -c '.tool_input // .input // .parameters // {}' 2>/dev/null || echo '{}')
         DETAILS=$(jq -n --arg tool "$CURRENT_TOOL" --arg args "$TOOL_ARGS_STR" '{event:"tool_starting",tool:$tool,args:($args|fromjson)}' 2>/dev/null || echo '{"event":"tool_starting"}')
+
+        # Audio announcement for tool use (pass tool name and relevant detail)
+        if [[ "${CLAUDE_AUDIO:-0}" == "1" ]]; then
+            # Extract relevant detail based on tool type
+            TOOL_DETAIL=""
+            case "$CURRENT_TOOL" in
+                Read|Write|Edit)
+                    # Get filename from file_path (basename only for brevity)
+                    TOOL_DETAIL=$(echo "$STDIN_DATA" | jq -r '.tool_input.file_path // .input.file_path // ""' 2>/dev/null | xargs basename 2>/dev/null || echo "")
+                    ;;
+                Bash)
+                    # Get first 30 chars of command
+                    TOOL_DETAIL=$(echo "$STDIN_DATA" | jq -r '.tool_input.command // .input.command // ""' 2>/dev/null | head -c 30 || echo "")
+                    ;;
+                Glob|Grep)
+                    # Get the pattern
+                    TOOL_DETAIL=$(echo "$STDIN_DATA" | jq -r '.tool_input.pattern // .input.pattern // ""' 2>/dev/null || echo "")
+                    ;;
+                Task)
+                    # Get the description
+                    TOOL_DETAIL=$(echo "$STDIN_DATA" | jq -r '.tool_input.description // .input.description // ""' 2>/dev/null || echo "")
+                    ;;
+                WebFetch|WebSearch)
+                    # Get URL or query
+                    TOOL_DETAIL=$(echo "$STDIN_DATA" | jq -r '.tool_input.url // .tool_input.query // .input.url // .input.query // ""' 2>/dev/null || echo "")
+                    ;;
+            esac
+            "$SCRIPT_DIR/audio-announcer.sh" pre-tool "$CURRENT_TOOL" "$TOOL_DETAIL" &
+        fi
         ;;
 
     post-tool)
