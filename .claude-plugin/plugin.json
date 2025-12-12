@@ -1,19 +1,11 @@
 {
-  "name": "my-plugins",
-  "version": "2.1.0",
-  "description": "Personal Claude Code plugin collection - slash commands, skills, hooks, and productivity tools",
-  "author": {
-    "name": "matt"
-  },
-  "license": "MIT",
+  "name": "my-ggprompts-toolkit",
+  "version": "1.0.0",
+  "description": "Curated Claude Code plugins synced from GGPrompts",
+  "homepage": "https://ggprompts.com/claude-code/toolkit",
   "keywords": [
-    "productivity",
-    "ai",
-    "gemini",
-    "multimodal",
-    "prompt-engineering",
-    "tmux",
-    "statusline"
-  ],
-  "hooks": "./hooks/hooks.json"
+    "ggprompts",
+    "toolkit",
+    "curated"
+  ]
 }
