@@ -26,6 +26,13 @@ ls ~/.claude/agents/*.md 2>/dev/null | xargs -I {} basename {} .md
 ls .claude/agents/*.md 2>/dev/null | xargs -I {} basename {} .md
 ```
 
+**Get user's terminal profiles** (from Chrome extension):
+```bash
+curl -s http://localhost:8129/api/browser/profiles | jq '.profiles[] | {name, category, command, workingDir}'
+```
+
+This returns profiles the user has configured in TabzChrome settings - useful for spawning terminals with their preferred configurations (fonts, themes, startup commands).
+
 **Spawn a new Claude session** (appears in TabzChrome sidebar):
 ```bash
 TOKEN=$(cat /tmp/tabz-auth-token)
@@ -34,7 +41,7 @@ curl -X POST http://localhost:8129/api/spawn \
   -H "X-Auth-Token: $TOKEN" \
   -d '{
     "name": "Claude: Worker Name",
-    "workingDir": "/path/to/project",
+    "workingDir": "'$(pwd)'",
     "command": "claude --agent AGENT_NAME --dangerously-skip-permissions"
   }'
 ```
@@ -110,7 +117,7 @@ TOKEN=$(cat /tmp/tabz-auth-token)
 RESULT=$(curl -s -X POST http://localhost:8129/api/spawn \
   -H "Content-Type: application/json" \
   -H "X-Auth-Token: $TOKEN" \
-  -d '{"name": "Claude: Fix auth bug", "workingDir": "/home/matt/projects/myapp", "command": "claude --dangerously-skip-permissions"}')
+  -d '{"name": "Claude: Fix auth bug", "workingDir": "'$(pwd)'", "command": "claude --dangerously-skip-permissions"}')
 ID=$(echo $RESULT | jq -r '.terminal.id')
 TMUX_SESSION=$(echo $RESULT | jq -r '.terminal.sessionName')
 echo "Spawned: $ID (tmux: $TMUX_SESSION)"
@@ -140,15 +147,16 @@ Spawn multiple specialized workers using different agents:
 ```bash
 # Get auth token once
 TOKEN=$(cat /tmp/tabz-auth-token)
+PROJECT_DIR=$(pwd)
 
 # Spawn workers with specific agents (include "Claude:" prefix for status tracking)
 W1=$(curl -s -X POST http://localhost:8129/api/spawn \
   -H "Content-Type: application/json" -H "X-Auth-Token: $TOKEN" \
-  -d '{"name": "Claude: Test Writer", "workingDir": "/project", "command": "claude --agent test-writer --dangerously-skip-permissions"}' | jq -r '.terminal.sessionName')
+  -d '{"name": "Claude: Test Writer", "workingDir": "'"$PROJECT_DIR"'", "command": "claude --agent test-writer --dangerously-skip-permissions"}' | jq -r '.terminal.sessionName')
 
 W2=$(curl -s -X POST http://localhost:8129/api/spawn \
   -H "Content-Type: application/json" -H "X-Auth-Token: $TOKEN" \
-  -d '{"name": "Claude: Doc Writer", "workingDir": "/project", "command": "claude --agent doc-writer --dangerously-skip-permissions"}' | jq -r '.terminal.sessionName')
+  -d '{"name": "Claude: Doc Writer", "workingDir": "'"$PROJECT_DIR"'", "command": "claude --agent doc-writer --dangerously-skip-permissions"}' | jq -r '.terminal.sessionName')
 
 sleep 3
 
@@ -206,7 +214,7 @@ When sending tasks to agent-specialized workers, keep prompts simple - the agent
 
 **Backend not running**:
 ```bash
-curl -s http://localhost:8129/api/health || echo "Start backend: cd ~/projects/TabzChrome/backend && node server.js"
+curl -s http://localhost:8129/api/health || echo "Start TabzChrome backend first"
 ```
 
 **Auth token missing or invalid** (spawn returns 401):
