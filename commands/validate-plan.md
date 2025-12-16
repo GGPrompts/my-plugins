@@ -1,3 +1,7 @@
+---
+description: Validate and enrich a project plan through multiple analysis perspectives
+---
+
 # Project Plan Validation & Enrichment System
 
 You are helping the user validate and improve a project plan through multiple analysis perspectives. Instead of a simple approval prompt, you'll offer rich validation options.

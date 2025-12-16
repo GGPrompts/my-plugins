@@ -1,3 +1,7 @@
+---
+description: Generate a spoken audio summary of recent Claude Code activity
+---
+
 # Session Brief - Audio Summary of Recent Conversation
 
 Generate a spoken summary of recent Claude Code activity using Gemini 2.5 Flash. Perfect for catching up after a break or remembering what you were working on.

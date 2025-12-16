@@ -15,6 +15,7 @@ This skill should be used when:
 - Debugging plugin loading or configuration issues
 - Understanding plugin directory structure and manifest format
 - Preparing plugins for distribution via marketplaces
+- Setting up a marketplace to bundle multiple plugins
 
 ## Plugin Overview
 
@@ -147,5 +148,15 @@ Run `claude --debug` to see:
 
 - `references/plugin-structure.md` - Complete directory layout and file locations
 - `references/manifest-schema.md` - Full plugin.json schema with all fields
+- `references/marketplace-schema.md` - Marketplace bundles, categories, and installation
 - `references/components.md` - Detailed specs for commands, agents, skills, hooks, MCP
 - `assets/templates/` - Template files for creating new plugins
+
+## Standalone vs Marketplace
+
+| Approach | Manifest | Use Case |
+|----------|----------|----------|
+| **Standalone** | `plugin.json` | Single focused plugin |
+| **Marketplace** | `marketplace.json` | Bundle multiple plugins |
+
+**Choose ONE** - having both may cause conflicts. Categories in marketplaces are metadata only (no visual grouping in UI).

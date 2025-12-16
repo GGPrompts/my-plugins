@@ -1,8 +1,21 @@
 # Plugin Directory Structure
 
-## Standard Plugin Layout
+## Two Distribution Models
 
-A complete plugin follows this structure:
+Claude Code supports two plugin distribution approaches:
+
+| Model | Manifest | Use Case |
+|-------|----------|----------|
+| **Standalone** | `plugin.json` | Single focused plugin |
+| **Marketplace** | `marketplace.json` | Collection of related plugins |
+
+**Choose ONE approach** - having both manifests may cause conflicts.
+
+---
+
+## Standalone Plugin Layout
+
+A complete standalone plugin follows this structure:
 
 ```
 my-plugin/
@@ -62,4 +75,35 @@ Use `${CLAUDE_PLUGIN_ROOT}` in hooks, MCP servers, and scripts for the absolute 
     }]
   }
 }
+```
+
+---
+
+## Marketplace Layout
+
+For distributing multiple plugins from one repository:
+
+```
+my-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json      # ONLY this file (no plugin.json)
+└── plugins/
+    ├── tool-a/
+    │   ├── commands/
+    │   ├── agents/
+    │   └── skills/
+    └── tool-b/
+        ├── commands/
+        └── hooks/
+```
+
+Each plugin in `plugins/` is independently installable. See `references/marketplace-schema.md` for full details.
+
+## Command Prefixing
+
+Commands from plugins are namespaced, but prefix is **optional unless conflicts exist**:
+
+```bash
+/deploy                  # Direct (no conflicts)
+/tool-a:deploy           # Prefixed (disambiguation)
 ```
