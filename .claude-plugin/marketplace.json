@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "my-plugins",
+  "version": "1.0.0",
+  "description": "Personal Claude Code plugins - commands, agents, and skills",
+  "owner": {
+    "name": "GGPrompts",
+    "url": "https://ggprompts.com"
+  },
+  "plugins": [
+    {
+      "name": "ggprompts-toolkit",
+      "description": "Full toolkit with commands, agents, and skills",
+      "version": "1.0.0",
+      "source": "./",
+      "category": "toolkit"
+    }
+  ]
+}
