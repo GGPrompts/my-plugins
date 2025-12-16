@@ -51,6 +51,12 @@
       "category": "mcp"
     },
     {
+      "name": "mcp-builder",
+      "description": "Build MCP servers in Python (FastMCP) and Node.js - design patterns and best practices",
+      "source": "./plugins/mcp-builder",
+      "category": "mcp"
+    },
+    {
       "name": "docs-seeker",
       "description": "Documentation search and retrieval patterns",
       "source": "./plugins/docs-seeker",
