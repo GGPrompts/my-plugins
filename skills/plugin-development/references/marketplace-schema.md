@@ -173,6 +173,24 @@ my-marketplace/
     └── specialized-tool/  # Individual installable plugin
 ```
 
+## Important: Symlinks Don't Work for Remote Plugins
+
+When plugins are loaded from remote GitHub repositories, **symlinks do not resolve correctly**. The symlink targets point to relative paths that don't exist in the plugin cache.
+
+**Don't do this:**
+```
+plugins/my-tool/commands/cmd.md -> ../../commands/cmd.md  # BROKEN
+```
+
+**Do this instead:**
+```
+plugins/my-tool/commands/cmd.md  # Actual file copy
+```
+
+For remote marketplaces, use actual file copies in the `plugins/` directory, not symlinks.
+
+---
+
 ## Comparison with Official Anthropic Marketplace
 
 The official Anthropic marketplace at `github.com/anthropics/claude-code` uses:
