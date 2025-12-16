@@ -1,12 +1,6 @@
 ---
-# Managed by GGPrompts - https://ggprompts.com
-# Source: https://ggprompts.com/claude-code/agents/mcp-manager
-# Component: mcp-manager
-# Synced: 2025-12-12T23:39:15.561Z
----
-
----
 name: mcp-manager
+model: haiku
 description: Manage MCP (Model Context Protocol) server integrations - discover tools/prompts/resources, analyze relevance for tasks, and execute MCP capabilities. Use when need to work with MCP servers, discover available MCP tools, filter MCP capabilities for specific tasks, execute MCP tools programmatically, or implement MCP client functionality. Keeps main context clean by handling MCP discovery in subagent context.
 ---
 
