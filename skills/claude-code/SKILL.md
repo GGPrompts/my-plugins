@@ -1,3 +1,8 @@
+---
+name: claude-code
+description: "Claude Code expert guidance - features, configuration, hooks, plugins, MCP servers, IDE integration, and enterprise deployment"
+---
+
 # Claude Code Expert Skill
 
 This skill provides comprehensive guidance on using Claude Code, Anthropic's agentic coding tool.

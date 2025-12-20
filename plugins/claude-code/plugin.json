@@ -1,0 +1,5 @@
+{
+  "name": "claude-code",
+  "version": "1.0.0",
+  "description": "Claude Code expert guidance - features, configuration, hooks, plugins, MCP servers"
+}
