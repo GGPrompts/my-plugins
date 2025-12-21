@@ -31,7 +31,7 @@ Use this format (skip sections that don't apply):
 
 ## Step 2: Save and Schedule
 
-After generating the summary, execute this bash script. Replace `HANDOFF_CONTENT` with the actual handoff you generated (properly escaped):
+After generating the summary, run this bash script with `run_in_background: true`. Replace the handoff content with your actual summary:
 
 ```bash
 # Save handoff to temp file
@@ -45,7 +45,7 @@ Here's the context from my previous session:
 Please acknowledge you've received this context, then let me know what you'd suggest we do next.
 HANDOFF_EOF
 
-# Also copy to clipboard as backup
+# Copy to clipboard as backup
 if command -v clip.exe &> /dev/null; then
     cat "$HANDOFF_FILE" | clip.exe
     echo "Backup copied to clipboard (WSL)"
@@ -58,55 +58,43 @@ elif command -v wl-copy &> /dev/null; then
     echo "Backup copied to clipboard (Wayland)"
 fi
 
-# Detect tmux session info (capture everything upfront)
-if [ -n "$TMUX" ]; then
-    TMUX_SOCKET=$(echo "$TMUX" | cut -d',' -f1)
-    TARGET_PANE=$(tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}')
+# Detect tmux pane (works in Claude's bash context)
+TMUX_PANE=$(tmux display-message -p '#{session_name}:#{window_index}.#{pane_index}' 2>/dev/null)
 
-    echo "Target: $TARGET_PANE"
+if [ -n "$TMUX_PANE" ]; then
+    echo "Target: $TMUX_PANE"
+    echo "WIPE: Starting in 5 seconds..."
 
-    # Schedule: clear scrollback, clear context, then send handoff
+    # Schedule: cancel pending, clear scrollback, /clear, then send handoff
     (
-        sleep 2
-        # Clear terminal scrollback first to prevent lag (using tmux API directly)
-        tmux -S "$TMUX_SOCKET" clear-history -t "$TARGET_PANE"
-        tmux -S "$TMUX_SOCKET" send-keys -t "$TARGET_PANE" C-l
+        sleep 5
+        # Cancel any pending operation
+        tmux send-keys -t "$TMUX_PANE" C-c
         sleep 1
-        # Send /clear - Escape first to clear any pending input
-        tmux -S "$TMUX_SOCKET" send-keys -t "$TARGET_PANE" Escape
-        sleep 0.3
-        tmux -S "$TMUX_SOCKET" send-keys -t "$TARGET_PANE" '/clear'
+        # Clear terminal scrollback
+        tmux clear-history -t "$TMUX_PANE"
+        tmux send-keys -t "$TMUX_PANE" C-l
         sleep 0.5
-        tmux -S "$TMUX_SOCKET" send-keys -t "$TARGET_PANE" Enter
+        # Send / first, wait for menu, then clear
+        tmux send-keys -t "$TMUX_PANE" '/'
+        sleep 0.5
+        tmux send-keys -t "$TMUX_PANE" -l 'clear'
+        sleep 0.3
+        tmux send-keys -t "$TMUX_PANE" C-m
         # Wait for /clear to fully process
         sleep 8
         # Use load-buffer for safe content transfer
-        tmux -S "$TMUX_SOCKET" load-buffer "$HANDOFF_FILE"
-        tmux -S "$TMUX_SOCKET" send-keys -t "$TARGET_PANE" ""
+        tmux load-buffer "$HANDOFF_FILE"
         sleep 0.3
-        tmux -S "$TMUX_SOCKET" paste-buffer -t "$TARGET_PANE"
+        tmux paste-buffer -t "$TMUX_PANE"
         sleep 0.3
-        tmux -S "$TMUX_SOCKET" send-keys -t "$TARGET_PANE" C-m
+        tmux send-keys -t "$TMUX_PANE" C-m
         sleep 1
         rm -f "$HANDOFF_FILE"
     ) &
-    disown
-
-    echo ""
-    echo "================================================"
-    echo "WIPE SCHEDULED"
-    echo "================================================"
-    echo "  - Terminal scrollback clears in 2 seconds"
-    echo "  - /clear runs 1 second after (clears context)"
-    echo "  - Handoff arrives 8 seconds after clear"
-    echo "  - Backup saved to clipboard"
-    echo ""
-    echo "Just wait ~12 seconds... or press Ctrl+C to abort"
-    echo "================================================"
 else
     echo ""
     echo "ERROR: Not running in tmux!"
-    echo ""
     echo "Handoff saved to: $HANDOFF_FILE"
     echo "Backup copied to clipboard"
     echo ""
@@ -116,11 +104,11 @@ else
 fi
 ```
 
+After running the script, say "Wipe scheduled in 5 seconds. Handoff backed up to clipboard." and stop.
+
 ## Important
 
+- Run the bash with `run_in_background: true` so Claude finishes immediately
 - This only works inside tmux
-- Clears terminal scrollback before /clear to prevent lag
-- Uses literal mode (-l) for tmux send-keys to avoid special char issues
-- The handoff is saved to clipboard as backup in case timing fails
-- If something goes wrong, just paste from clipboard in a new session
-- Timing: 2s scrollback → 1s /clear → 8s handoff (~12s total)
+- Handoff is saved to clipboard as backup in case timing fails
+- If something goes wrong, just paste from clipboard after /clear

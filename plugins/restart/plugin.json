@@ -1,0 +1,6 @@
+{
+  "name": "restart",
+  "version": "1.0.0",
+  "description": "Exit and restart Claude Code with plugins reloaded",
+  "commands": ["commands/*.md"]
+}

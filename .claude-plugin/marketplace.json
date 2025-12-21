@@ -135,6 +135,12 @@
       "category": "commands"
     },
     {
+      "name": "restart",
+      "description": "Exit and restart Claude Code with plugins reloaded",
+      "source": "./plugins/restart",
+      "category": "commands"
+    },
+    {
       "name": "wipe",
       "description": "Generate handoff, clear context, and auto-continue in fresh session",
       "source": "./plugins/wipe",
