@@ -1,0 +1,5 @@
+{
+  "name": "mcp-manager",
+  "version": "1.0.0",
+  "description": "Manage MCP server integrations - discover tools, filter capabilities, execute MCP"
+}

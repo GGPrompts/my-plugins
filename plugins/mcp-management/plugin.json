@@ -1,0 +1,5 @@
+{
+  "name": "mcp-management",
+  "version": "1.0.0",
+  "description": "Manage MCP servers - discover, analyze, and execute tools/prompts/resources"
+}

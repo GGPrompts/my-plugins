@@ -1,0 +1,5 @@
+{
+  "name": "media-processing",
+  "version": "1.0.0",
+  "description": "FFmpeg and ImageMagick - video/audio encoding, image manipulation, batch processing"
+}

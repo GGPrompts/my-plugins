@@ -1,0 +1,5 @@
+{
+  "name": "frontend-development",
+  "version": "1.0.0",
+  "description": "React/TypeScript patterns - Suspense, lazy loading, MUI v7, TanStack Router"
+}

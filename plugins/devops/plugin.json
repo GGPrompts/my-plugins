@@ -1,0 +1,5 @@
+{
+  "name": "devops",
+  "version": "1.0.0",
+  "description": "Cloud infrastructure - Cloudflare Workers, Docker, GCP, CI/CD pipelines"
+}

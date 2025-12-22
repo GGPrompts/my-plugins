@@ -1,0 +1,5 @@
+{
+  "name": "docker-mcp",
+  "version": "1.0.0",
+  "description": "Docker MCP server patterns and integration"
+}

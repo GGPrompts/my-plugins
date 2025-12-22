@@ -1,0 +1,5 @@
+{
+  "name": "pmux",
+  "version": "1.0.0",
+  "description": "Interactive Prompt Engineer with tmux send-keys - directly send prompts to Claude Code sessions"
+}

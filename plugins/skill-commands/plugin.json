@@ -1,0 +1,5 @@
+{
+  "name": "skill-commands",
+  "version": "1.0.0",
+  "description": "Skill management - /skill:create to scaffold new Claude Code skills"
+}

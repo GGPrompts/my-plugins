@@ -1,0 +1,5 @@
+{
+  "name": "bubbletea",
+  "version": "1.0.0",
+  "description": "Bubble Tea TUI framework patterns for Go terminal applications"
+}

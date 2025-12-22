@@ -1,0 +1,5 @@
+{
+  "name": "mcp-builder",
+  "version": "1.0.0",
+  "description": "Build MCP servers in Python (FastMCP) and Node.js - design patterns and best practices"
+}

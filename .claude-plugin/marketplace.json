@@ -21,6 +21,24 @@
       "category": "development"
     },
     {
+      "name": "aesthetic",
+      "description": "Create aesthetically beautiful interfaces following proven design principles",
+      "source": "./plugins/aesthetic",
+      "category": "design"
+    },
+    {
+      "name": "backend-development",
+      "description": "Build robust backend systems - Node.js, Python, Go, APIs, databases, authentication",
+      "source": "./plugins/backend-development",
+      "category": "development"
+    },
+    {
+      "name": "better-auth",
+      "description": "Better Auth framework - TypeScript authentication with OAuth, 2FA, passkeys, RBAC",
+      "source": "./plugins/better-auth",
+      "category": "development"
+    },
+    {
       "name": "bubbletea",
       "description": "Bubble Tea TUI framework patterns for Go terminal applications",
       "source": "./plugins/bubbletea",
@@ -39,10 +57,28 @@
       "category": "meta"
     },
     {
+      "name": "code-review",
+      "description": "Code review practices - receiving feedback, verification gates, preventing false claims",
+      "source": "./plugins/code-review",
+      "category": "development"
+    },
+    {
+      "name": "databases",
+      "description": "MongoDB and PostgreSQL - schemas, queries, aggregations, optimization, migrations",
+      "source": "./plugins/databases",
+      "category": "development"
+    },
+    {
       "name": "debugging",
       "description": "Systematic debugging skills - root cause tracing, defense in depth, verification",
       "source": "./plugins/debugging",
       "category": "development"
+    },
+    {
+      "name": "devops",
+      "description": "Cloud infrastructure - Cloudflare Workers, Docker, GCP, CI/CD pipelines",
+      "source": "./plugins/devops",
+      "category": "devops"
     },
     {
       "name": "docker-mcp",
@@ -51,16 +87,46 @@
       "category": "mcp"
     },
     {
+      "name": "docs-seeker",
+      "description": "Documentation search and retrieval patterns",
+      "source": "./plugins/docs-seeker",
+      "category": "research"
+    },
+    {
+      "name": "frontend-design",
+      "description": "Create distinctive, production-grade frontend interfaces with high design quality",
+      "source": "./plugins/frontend-design",
+      "category": "frontend"
+    },
+    {
+      "name": "frontend-development",
+      "description": "React/TypeScript patterns - Suspense, lazy loading, MUI v7, TanStack Router",
+      "source": "./plugins/frontend-development",
+      "category": "frontend"
+    },
+    {
+      "name": "google-adk-python",
+      "description": "Google Agent Development Kit (ADK) Python - build, evaluate, deploy AI agents",
+      "source": "./plugins/google-adk-python",
+      "category": "ai"
+    },
+    {
       "name": "mcp-builder",
       "description": "Build MCP servers in Python (FastMCP) and Node.js - design patterns and best practices",
       "source": "./plugins/mcp-builder",
       "category": "mcp"
     },
     {
-      "name": "docs-seeker",
-      "description": "Documentation search and retrieval patterns",
-      "source": "./plugins/docs-seeker",
-      "category": "research"
+      "name": "mcp-management",
+      "description": "Manage MCP servers - discover, analyze, and execute tools/prompts/resources",
+      "source": "./plugins/mcp-management",
+      "category": "mcp"
+    },
+    {
+      "name": "media-processing",
+      "description": "FFmpeg and ImageMagick - video/audio encoding, image manipulation, batch processing",
+      "source": "./plugins/media-processing",
+      "category": "media"
     },
     {
       "name": "plugin-development",
@@ -73,6 +139,24 @@
       "description": "Problem-solving frameworks - collision zones, meta-patterns, inversion, scale games",
       "source": "./plugins/problem-solving",
       "category": "thinking"
+    },
+    {
+      "name": "repomix",
+      "description": "Package code repositories into single AI-friendly files with Repomix",
+      "source": "./plugins/repomix",
+      "category": "development"
+    },
+    {
+      "name": "sequential-thinking",
+      "description": "Systematic step-by-step reasoning with revision and branching for complex problems",
+      "source": "./plugins/sequential-thinking",
+      "category": "thinking"
+    },
+    {
+      "name": "shopify",
+      "description": "Shopify apps, extensions, themes - GraphQL APIs, Polaris UI, Liquid templating",
+      "source": "./plugins/shopify",
+      "category": "ecommerce"
     },
     {
       "name": "skill-creator",
@@ -117,6 +201,12 @@
       "category": "commands"
     },
     {
+      "name": "git-commands",
+      "description": "Git shortcuts - /git:cm (commit), /git:cp (commit+push), /git:pr (create PR)",
+      "source": "./plugins/git-commands",
+      "category": "commands"
+    },
+    {
       "name": "handoff",
       "description": "Generate a handoff summary and copy to clipboard for new session",
       "source": "./plugins/handoff",
@@ -129,15 +219,21 @@
       "category": "commands"
     },
     {
-      "name": "validate-plan",
-      "description": "Validate and enrich a project plan through multiple analysis perspectives",
-      "source": "./plugins/validate-plan",
-      "category": "commands"
-    },
-    {
       "name": "restart",
       "description": "Exit and restart Claude Code with plugins reloaded",
       "source": "./plugins/restart",
+      "category": "commands"
+    },
+    {
+      "name": "skill-commands",
+      "description": "Skill management - /skill:create to scaffold new Claude Code skills",
+      "source": "./plugins/skill-commands",
+      "category": "commands"
+    },
+    {
+      "name": "validate-plan",
+      "description": "Validate and enrich a project plan through multiple analysis perspectives",
+      "source": "./plugins/validate-plan",
       "category": "commands"
     },
     {

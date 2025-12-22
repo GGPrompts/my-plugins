@@ -1,0 +1,5 @@
+{
+  "name": "brief",
+  "version": "1.0.0",
+  "description": "Generate a spoken audio summary of recent Claude Code activity"
+}

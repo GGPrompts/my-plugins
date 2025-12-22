@@ -1,0 +1,5 @@
+{
+  "name": "plugin-development",
+  "version": "1.0.0",
+  "description": "Create Claude Code plugins - commands, agents, skills, hooks, MCP servers"
+}

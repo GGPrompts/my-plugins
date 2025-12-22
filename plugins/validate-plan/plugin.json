@@ -1,0 +1,5 @@
+{
+  "name": "validate-plan",
+  "version": "1.0.0",
+  "description": "Validate and enrich a project plan through multiple analysis perspectives"
+}

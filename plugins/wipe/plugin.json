@@ -1,0 +1,5 @@
+{
+  "name": "wipe",
+  "version": "1.0.0",
+  "description": "Generate handoff, clear context, and auto-continue in fresh session"
+}
