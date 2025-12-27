@@ -1,7 +1,7 @@
 {
   "enabledPlugins": {
     "plugin-dev@claude-plugins-official": true,
-    "mcp-builder@tabz-chrome-marketplace": true,
+    "mcp-builder@my-plugins": true,
     "agent-creator@my-plugins": true,
     "plugin-development@my-plugins": true
   }
