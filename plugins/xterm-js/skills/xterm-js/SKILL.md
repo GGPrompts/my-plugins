@@ -545,3 +545,9 @@ No scripts included - xterm.js integration is primarily about patterns and archi
 ### assets/
 
 No assets included - this skill focuses on best practices and patterns rather than templates.
+
+## Implementation Principles
+
+**Avoid over-engineering.** Only make changes directly requested or clearly necessary. Keep solutions simple and focused. Do not add features, refactor code, or make improvements beyond what was asked.
+
+**Read and understand** relevant files before proposing code edits. Do not speculate about code you have not inspected.

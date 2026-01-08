@@ -150,7 +150,7 @@ You MUST complete each phase before proceeding to the next.
 **Scientific method:**
 
 1. **Form Single Hypothesis**
-   - State clearly: "I think X is the root cause because Y"
+   - State clearly: "I believe X is the root cause because Y"
    - Write it down
    - Be specific, not vague
 
@@ -217,7 +217,7 @@ You MUST complete each phase before proceeding to the next.
 
 ## Red Flags - STOP and Follow Process
 
-If you catch yourself thinking:
+If you notice yourself considering:
 - "Quick fix for now, investigate later"
 - "Just try changing X and see if it works"
 - "Add multiple changes, run tests"

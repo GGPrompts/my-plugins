@@ -22,7 +22,7 @@ if [ -n "$TMUX_PANE" ]; then
         tmux send-keys -t "$TMUX_PANE" -l 'exit'
         sleep 0.3
         tmux send-keys -t "$TMUX_PANE" C-m
-        sleep 2
+        sleep 4
         tmux send-keys -t "$TMUX_PANE" -l "$CLAUDE_CMD"
         sleep 0.3
         tmux send-keys -t "$TMUX_PANE" C-m

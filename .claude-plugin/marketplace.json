@@ -5,7 +5,7 @@
   "description": "Personal Claude Code plugins - individually toggleable commands, agents, and skills",
   "owner": {
     "name": "GGPrompts",
-    "url": "https://ggprompts.com"
+    "url": "https://github.com/GGPrompts/my-plugins"
   },
   "plugins": [
     {

@@ -44,7 +44,7 @@ Before diving into implementation, understand how to design tools for AI agents 
 - Help agents learn proper tool usage through clear feedback
 
 **Follow Natural Task Subdivisions:**
-- Tool names should reflect how humans think about tasks
+- Tool names should reflect how humans approach tasks
 - Group related tools with consistent prefixes for discoverability
 - Design tools around natural workflows, not just API structure
 

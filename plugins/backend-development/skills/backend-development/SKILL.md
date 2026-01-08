@@ -88,6 +88,12 @@ See: `references/backend-technologies.md` for detailed comparisons
 
 **Deployment:** Docker → CI/CD → Blue-green/canary → Feature flags → Monitoring → Logging → Health checks
 
+## Implementation Principles
+
+**Avoid over-engineering.** Only make changes directly requested or clearly necessary. Keep solutions simple and focused. Do not add features, refactor code, or make improvements beyond what was asked. Start with a monolith and split to microservices only when needed.
+
+**Read and understand** relevant files before proposing code edits. Do not speculate about code you have not inspected.
+
 ## Resources
 
 - OWASP Top 10: https://owasp.org/www-project-top-ten/

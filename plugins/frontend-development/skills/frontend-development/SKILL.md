@@ -204,15 +204,15 @@ export const Route = createFileRoute('/my-route/')({
 
 ### ⏳ Loading & Error States
 
-**CRITICAL RULE: No Early Returns**
+**Rule: No Early Returns**
 
 ```typescript
-// ❌ NEVER - Causes layout shift
+// ❌ Avoid - Causes layout shift
 if (isLoading) {
     return <LoadingSpinner />;
 }
 
-// ✅ ALWAYS - Consistent layout
+// ✅ Better - Consistent layout
 <SuspenseLoader>
     <Content />
 </SuspenseLoader>
@@ -222,7 +222,7 @@ if (isLoading) {
 
 **Error Handling:**
 - Use `useMuiSnackbar` for user feedback
-- NEVER `react-toastify`
+- Avoid `react-toastify`
 - TanStack Query `onError` callbacks
 
 **[📖 Complete Guide: resources/loading-and-error-states.md](resources/loading-and-error-states.md)**
@@ -308,6 +308,8 @@ if (isLoading) {
 6. **Import Aliases**: Use @/, ~types, ~components, ~features
 7. **No Early Returns**: Prevents layout shift
 8. **useMuiSnackbar**: For all user notifications
+9. **Avoid Over-Engineering**: Only make changes directly requested or clearly necessary. Keep solutions simple and focused. Do not add features or refactor code beyond what was asked.
+10. **Read Before Editing**: Understand relevant files before proposing code edits. Do not speculate about code not inspected.
 
 ---
 

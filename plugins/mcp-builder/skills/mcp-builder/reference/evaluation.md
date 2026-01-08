@@ -192,7 +192,7 @@ List the tools available in the MCP server:
 
 Repeat steps 1 & 2 until you have a good understanding:
 - Iterate multiple times
-- Think about the kinds of tasks you want to create
+- Consider the kinds of tasks you want to create
 - Refine your understanding
 - At NO stage should you READ the code of the MCP server implementation itself
 - Use your intuition and understanding to create reasonable, realistic, but VERY challenging tasks
