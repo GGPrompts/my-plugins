@@ -2,257 +2,275 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "my-plugins",
   "version": "1.0.0",
-  "description": "Personal Claude Code plugins - individually toggleable commands, agents, and skills",
+  "description": "Personal Claude Code plugins - organized by domain with subagent bundles",
   "owner": {
     "name": "GGPrompts",
     "url": "https://github.com/GGPrompts/my-plugins"
   },
   "plugins": [
     {
-      "name": "ai-multimodal",
-      "description": "Google Gemini API - audio, image, video, document processing and generation",
-      "source": "./plugins/ai-multimodal",
-      "category": "ai"
-    },
-    {
-      "name": "agent-creator",
-      "description": "Create Claude Code agents with proper frontmatter and system prompts",
-      "source": "./plugins/agent-creator",
-      "category": "development"
-    },
-    {
       "name": "aesthetic",
       "description": "Create aesthetically beautiful interfaces following proven design principles",
-      "source": "./plugins/aesthetic",
-      "category": "design"
-    },
-    {
-      "name": "backend-development",
-      "description": "Build robust backend systems - Node.js, Python, Go, APIs, databases, authentication",
-      "source": "./plugins/backend-development",
-      "category": "development"
-    },
-    {
-      "name": "better-auth",
-      "description": "Better Auth framework - TypeScript authentication with OAuth, 2FA, passkeys, RBAC",
-      "source": "./plugins/better-auth",
-      "category": "development"
-    },
-    {
-      "name": "bubbletea",
-      "description": "Bubble Tea TUI framework patterns for Go terminal applications",
-      "source": "./plugins/bubbletea",
-      "category": "development"
-    },
-    {
-      "name": "canvas-design",
-      "description": "HTML5 Canvas creative coding and generative art patterns",
-      "source": "./plugins/canvas-design",
-      "category": "creative"
-    },
-    {
-      "name": "claude-code",
-      "description": "Claude Code best practices and usage patterns",
-      "source": "./plugins/claude-code",
-      "category": "meta"
-    },
-    {
-      "name": "code-review",
-      "description": "Code review practices - receiving feedback, verification gates, preventing false claims",
-      "source": "./plugins/code-review",
-      "category": "development"
-    },
-    {
-      "name": "databases",
-      "description": "MongoDB and PostgreSQL - schemas, queries, aggregations, optimization, migrations",
-      "source": "./plugins/databases",
-      "category": "development"
-    },
-    {
-      "name": "debugging",
-      "description": "Systematic debugging skills - root cause tracing, defense in depth, verification",
-      "source": "./plugins/debugging",
-      "category": "development"
-    },
-    {
-      "name": "devops",
-      "description": "Cloud infrastructure - Cloudflare Workers, Docker, GCP, CI/CD pipelines",
-      "source": "./plugins/devops",
-      "category": "devops"
-    },
-    {
-      "name": "docker-mcp",
-      "description": "Docker MCP server patterns and integration",
-      "source": "./plugins/docker-mcp",
-      "category": "mcp"
-    },
-    {
-      "name": "docs-seeker",
-      "description": "Documentation search and retrieval patterns",
-      "source": "./plugins/docs-seeker",
-      "category": "research"
+      "source": "./plugins/frontend/aesthetic",
+      "category": "frontend"
     },
     {
       "name": "frontend-design",
       "description": "Create distinctive, production-grade frontend interfaces with high design quality",
-      "source": "./plugins/frontend-design",
+      "source": "./plugins/frontend/frontend-design",
       "category": "frontend"
     },
     {
       "name": "frontend-development",
       "description": "React/TypeScript patterns - Suspense, lazy loading, MUI v7, TanStack Router",
-      "source": "./plugins/frontend-development",
+      "source": "./plugins/frontend/frontend-development",
       "category": "frontend"
-    },
-    {
-      "name": "google-adk-python",
-      "description": "Google Agent Development Kit (ADK) Python - build, evaluate, deploy AI agents",
-      "source": "./plugins/google-adk-python",
-      "category": "ai"
-    },
-    {
-      "name": "mcp-builder",
-      "description": "Build MCP servers in Python (FastMCP) and Node.js - design patterns and best practices",
-      "source": "./plugins/mcp-builder",
-      "category": "mcp"
-    },
-    {
-      "name": "mcp-management",
-      "description": "Manage MCP servers - discover, analyze, and execute tools/prompts/resources",
-      "source": "./plugins/mcp-management",
-      "category": "mcp"
-    },
-    {
-      "name": "media-processing",
-      "description": "FFmpeg and ImageMagick - video/audio encoding, image manipulation, batch processing",
-      "source": "./plugins/media-processing",
-      "category": "media"
-    },
-    {
-      "name": "plugin-development",
-      "description": "Create Claude Code plugins - commands, agents, skills, hooks, MCP servers",
-      "source": "./plugins/plugin-development",
-      "category": "meta"
-    },
-    {
-      "name": "problem-solving",
-      "description": "Problem-solving frameworks - collision zones, meta-patterns, inversion, scale games",
-      "source": "./plugins/problem-solving",
-      "category": "thinking"
-    },
-    {
-      "name": "repomix",
-      "description": "Package code repositories into single AI-friendly files with Repomix",
-      "source": "./plugins/repomix",
-      "category": "development"
-    },
-    {
-      "name": "sequential-thinking",
-      "description": "Systematic step-by-step reasoning with revision and branching for complex problems",
-      "source": "./plugins/sequential-thinking",
-      "category": "thinking"
-    },
-    {
-      "name": "shopify",
-      "description": "Shopify apps, extensions, themes - GraphQL APIs, Polaris UI, Liquid templating",
-      "source": "./plugins/shopify",
-      "category": "ecommerce"
-    },
-    {
-      "name": "skill-creator",
-      "description": "Create Claude Code skills with proper structure and progressive disclosure",
-      "source": "./plugins/skill-creator",
-      "category": "meta"
     },
     {
       "name": "ui-styling",
       "description": "Tailwind CSS and shadcn/ui patterns for modern web styling",
-      "source": "./plugins/ui-styling",
+      "source": "./plugins/frontend/ui-styling",
       "category": "frontend"
     },
     {
       "name": "web-frameworks",
       "description": "Next.js, Remix, and Turborepo patterns for web development",
-      "source": "./plugins/web-frameworks",
+      "source": "./plugins/frontend/web-frameworks",
       "category": "frontend"
     },
     {
-      "name": "xterm-js",
-      "description": "xterm.js terminal patterns - React integration, WebSocket, state management",
-      "source": "./plugins/xterm-js",
-      "category": "development"
+      "name": "backend-development",
+      "description": "Build robust backend systems - Node.js, Python, Go, APIs, databases, authentication",
+      "source": "./plugins/backend/backend-development",
+      "category": "backend"
     },
     {
-      "name": "brief",
-      "description": "Generate a spoken audio summary of recent Claude Code activity",
-      "source": "./plugins/brief",
-      "category": "commands"
+      "name": "databases",
+      "description": "MongoDB and PostgreSQL - schemas, queries, aggregations, optimization, migrations",
+      "source": "./plugins/backend/databases",
+      "category": "backend"
     },
     {
-      "name": "codex",
-      "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)",
-      "source": "./plugins/codex",
-      "category": "commands"
+      "name": "better-auth",
+      "description": "Better Auth framework - TypeScript authentication with OAuth, 2FA, passkeys, RBAC",
+      "source": "./plugins/backend/better-auth",
+      "category": "backend"
     },
     {
-      "name": "gemini",
-      "description": "Query Gemini for real-time info, web research, or fast second opinions",
-      "source": "./plugins/gemini",
-      "category": "commands"
+      "name": "devops",
+      "description": "Cloud infrastructure - Cloudflare Workers, Docker, GCP, CI/CD pipelines",
+      "source": "./plugins/backend/devops",
+      "category": "backend"
     },
     {
-      "name": "git-commands",
-      "description": "Git shortcuts - /git:cm (commit), /git:cp (commit+push), /git:pr (create PR)",
-      "source": "./plugins/git-commands",
-      "category": "commands"
+      "name": "docker-mcp",
+      "description": "Docker MCP server patterns and integration",
+      "source": "./plugins/backend/docker-mcp",
+      "category": "backend"
     },
     {
-      "name": "handoff",
-      "description": "Generate a handoff summary and copy to clipboard for new session",
-      "source": "./plugins/handoff",
-      "category": "commands"
+      "name": "canvas-design",
+      "description": "HTML5 Canvas creative coding and generative art patterns",
+      "source": "./plugins/visual/canvas-design",
+      "category": "visual"
     },
     {
-      "name": "pmux",
-      "description": "Interactive Prompt Engineer with tmux send-keys - directly send prompts to Claude Code sessions",
-      "source": "./plugins/pmux",
-      "category": "commands"
+      "name": "ai-multimodal",
+      "description": "Google Gemini API - audio, image, video, document processing and generation",
+      "source": "./plugins/visual/ai-multimodal",
+      "category": "visual"
     },
     {
-      "name": "restart",
-      "description": "Exit and restart Claude Code with plugins reloaded",
-      "source": "./plugins/restart",
-      "category": "commands"
+      "name": "media-processing",
+      "description": "FFmpeg and ImageMagick - video/audio encoding, image manipulation, batch processing",
+      "source": "./plugins/visual/media-processing",
+      "category": "visual"
+    },
+    {
+      "name": "document-skills",
+      "description": "Create PDFs, Word docs, presentations, and spreadsheets",
+      "source": "./plugins/docs/document-skills",
+      "category": "docs"
+    },
+    {
+      "name": "skill-creator",
+      "description": "Create Claude Code skills with proper structure and progressive disclosure",
+      "source": "./plugins/meta/skill-creator",
+      "category": "meta"
+    },
+    {
+      "name": "mcp-builder",
+      "description": "Build MCP servers in Python (FastMCP) and Node.js - design patterns and best practices",
+      "source": "./plugins/meta/mcp-builder",
+      "category": "meta"
+    },
+    {
+      "name": "plugin-development",
+      "description": "Create Claude Code plugins - commands, agents, skills, hooks, MCP servers",
+      "source": "./plugins/meta/plugin-development",
+      "category": "meta"
+    },
+    {
+      "name": "claude-code",
+      "description": "Claude Code best practices and usage patterns",
+      "source": "./plugins/meta/claude-code",
+      "category": "meta"
+    },
+    {
+      "name": "agent-creator",
+      "description": "Create Claude Code agents with proper frontmatter and system prompts",
+      "source": "./plugins/meta/agent-creator",
+      "category": "meta"
     },
     {
       "name": "skill-commands",
       "description": "Skill management - /skill:create to scaffold new Claude Code skills",
-      "source": "./plugins/skill-commands",
-      "category": "commands"
+      "source": "./plugins/meta/skill-commands",
+      "category": "meta"
+    },
+    {
+      "name": "context-engineering",
+      "description": "Context engineering patterns for effective LLM prompting",
+      "source": "./plugins/meta/context-engineering",
+      "category": "meta"
+    },
+    {
+      "name": "codex",
+      "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)",
+      "source": "./plugins/tools/codex",
+      "category": "tools"
+    },
+    {
+      "name": "debugging",
+      "description": "Systematic debugging skills - root cause tracing, defense in depth, verification",
+      "source": "./plugins/tools/debugging",
+      "category": "tools"
+    },
+    {
+      "name": "sequential-thinking",
+      "description": "Systematic step-by-step reasoning with revision and branching for complex problems",
+      "source": "./plugins/tools/sequential-thinking",
+      "category": "tools"
+    },
+    {
+      "name": "problem-solving",
+      "description": "Problem-solving frameworks - collision zones, meta-patterns, inversion, scale games",
+      "source": "./plugins/tools/problem-solving",
+      "category": "tools"
     },
     {
       "name": "validate-plan",
       "description": "Validate and enrich a project plan through multiple analysis perspectives",
-      "source": "./plugins/validate-plan",
-      "category": "commands"
+      "source": "./plugins/tools/validate-plan",
+      "category": "tools"
+    },
+    {
+      "name": "docs-seeker",
+      "description": "Documentation search and retrieval patterns",
+      "source": "./plugins/tools/docs-seeker",
+      "category": "tools"
+    },
+    {
+      "name": "code-review",
+      "description": "Code review practices - receiving feedback, verification gates, preventing false claims",
+      "source": "./plugins/tools/code-review",
+      "category": "tools"
+    },
+    {
+      "name": "repomix",
+      "description": "Package code repositories into single AI-friendly files with Repomix",
+      "source": "./plugins/tools/repomix",
+      "category": "tools"
+    },
+    {
+      "name": "xterm-js",
+      "description": "xterm.js terminal patterns - React integration, WebSocket, state management",
+      "source": "./plugins/terminal/xterm-js",
+      "category": "terminal"
+    },
+    {
+      "name": "pmux",
+      "description": "Interactive Prompt Engineer with tmux send-keys - directly send prompts to Claude Code sessions",
+      "source": "./plugins/terminal/pmux",
+      "category": "terminal"
+    },
+    {
+      "name": "brief",
+      "description": "Generate a spoken audio summary of recent Claude Code activity",
+      "source": "./plugins/terminal/brief",
+      "category": "terminal"
     },
     {
       "name": "wipe",
       "description": "Generate handoff, clear context, and auto-continue in fresh session",
-      "source": "./plugins/wipe",
-      "category": "commands"
+      "source": "./plugins/terminal/wipe",
+      "category": "terminal"
+    },
+    {
+      "name": "restart",
+      "description": "Exit and restart Claude Code with plugins reloaded",
+      "source": "./plugins/terminal/restart",
+      "category": "terminal"
+    },
+    {
+      "name": "handoff",
+      "description": "Generate a handoff summary and copy to clipboard for new session",
+      "source": "./plugins/terminal/handoff",
+      "category": "terminal"
+    },
+    {
+      "name": "conductor",
+      "description": "Multi-session orchestration - spawn workers, manage beads issues, coordinate parallel tasks",
+      "source": "./plugins/TabzChrome/conductor",
+      "category": "tabzchrome"
+    },
+    {
+      "name": "tabz-integration",
+      "description": "Integration guide for connecting projects to TabzChrome terminals and browser automation",
+      "source": "./plugins/TabzChrome/tabz-integration",
+      "category": "tabzchrome"
+    },
+    {
+      "name": "bubbletea",
+      "description": "Bubble Tea TUI framework patterns for Go terminal applications",
+      "source": "./plugins/specialized/bubbletea",
+      "category": "specialized"
+    },
+    {
+      "name": "google-adk-python",
+      "description": "Google Agent Development Kit (ADK) Python - build, evaluate, deploy AI agents",
+      "source": "./plugins/specialized/google-adk-python",
+      "category": "specialized"
+    },
+    {
+      "name": "shopify",
+      "description": "Shopify apps, extensions, themes - GraphQL APIs, Polaris UI, Liquid templating",
+      "source": "./plugins/specialized/shopify",
+      "category": "specialized"
+    },
+    {
+      "name": "git-commands",
+      "description": "Git shortcuts - /git:cm (commit), /git:cp (commit+push), /git:pr (create PR)",
+      "source": "./plugins/specialized/git-commands",
+      "category": "specialized"
+    },
+    {
+      "name": "mcp-management",
+      "description": "Manage MCP servers - discover, analyze, and execute tools/prompts/resources",
+      "source": "./plugins/specialized/mcp-management",
+      "category": "specialized"
     },
     {
       "name": "mcp-manager",
       "description": "Manage MCP server integrations - discover tools, filter capabilities, execute MCP",
-      "source": "./plugins/mcp-manager",
-      "category": "agents"
+      "source": "./plugins/specialized/mcp-manager",
+      "category": "specialized"
     },
     {
-      "name": "full-toolkit",
-      "description": "Everything - all skills, commands, and agents in one install",
-      "source": "./",
-      "category": "bundle"
+      "name": "specialized-tools",
+      "description": "Specialized development tools and utilities",
+      "source": "./plugins/specialized/specialized-tools",
+      "category": "specialized"
     }
   ]
 }
