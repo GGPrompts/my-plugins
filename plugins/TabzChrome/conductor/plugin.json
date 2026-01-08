@@ -1,5 +1,0 @@
-{
-  "name": "conductor",
-  "version": "1.0.0",
-  "description": "Orchestrate multi-session Claude workflows - spawn workers, use subagents for monitoring, manage beads issues"
-}

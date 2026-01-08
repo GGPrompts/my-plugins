@@ -219,16 +219,10 @@
       "category": "terminal"
     },
     {
-      "name": "conductor",
-      "description": "Multi-session orchestration - spawn workers, manage beads issues, coordinate parallel tasks",
-      "source": "./plugins/TabzChrome/conductor",
-      "category": "tabzchrome"
-    },
-    {
-      "name": "tabz-integration",
-      "description": "Integration guide for connecting projects to TabzChrome terminals and browser automation",
-      "source": "./plugins/TabzChrome/tabz-integration",
-      "category": "tabzchrome"
+      "name": "subagents",
+      "description": "Purpose-built subagents - frontend-builder, backend-builder, visual-creator, docs-writer, terminal-builder, claude-code-architect",
+      "source": "./plugins/subagents",
+      "category": "agents"
     },
     {
       "name": "bubbletea",
