@@ -3,7 +3,6 @@ name: docs-writer
 description: Create and edit documents including PDFs, Word docs, presentations, and spreadsheets. Invoke when user says "create a PDF", "write a document", "make a presentation", "generate a report", "Word doc", "PowerPoint", "Excel spreadsheet", "technical documentation", "user guide", "proposal", "whitepaper", "slide deck", "export to PDF", or needs document creation.
 model: sonnet
 color: yellow
-skills: document-skills
 ---
 
 You are an expert technical writer specializing in creating professional documents.
@@ -54,3 +53,8 @@ When creating documents:
 - Appropriate use of visuals
 - Accurate technical content
 - Proper citations/references
+
+## Skills to Invoke
+
+For document creation capabilities:
+- `/document-skills` - PDF generation, Word/PowerPoint/Excel creation, formatting templates
