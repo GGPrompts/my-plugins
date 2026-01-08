@@ -1,0 +1,54 @@
+# Local LLM Configuration for Codex
+# ~/.codex/config.toml
+#
+# Use with LM Studio or Ollama for offline/private operation.
+# Requires: Local LLM server running before starting Codex.
+
+# Use local open-source provider
+model_provider = "oss"
+
+# Adjust for local model capabilities
+# Most local models have smaller context windows
+model_context_window = 32000
+model_auto_compact_token_limit = 25000
+
+# Lower reasoning effort for faster inference
+model_reasoning_effort = "low"
+
+# Standard security
+sandbox_mode = "workspace-write"
+approval_policy = "on-failure"
+
+# Enable features that work well locally
+[features]
+shell_tool = true
+parallel = false  # Disable for simpler local inference
+view_image_tool = false  # May not work with all local models
+
+# Trust local projects
+[projects."/home/user/projects"]
+trust_level = "trusted"
+
+# Minimal shell environment
+[shell_environment_policy]
+inherit = "core"
+
+# ------------------------------------
+# Setup Instructions:
+#
+# For LM Studio:
+#   1. Download from https://lmstudio.ai
+#   2. Download a coding model (DeepSeek Coder, CodeLlama, etc.)
+#   3. Start the local server (default: localhost:1234)
+#   4. Run: codex --oss "your prompt"
+#
+# For Ollama:
+#   1. Install from https://ollama.ai
+#   2. Pull a model: ollama pull codellama
+#   3. Ollama auto-starts its server
+#   4. Run: codex --oss "your prompt"
+#
+# Or specify provider explicitly:
+#   codex --local-provider lmstudio "prompt"
+#   codex --local-provider ollama "prompt"
+# ------------------------------------

@@ -1,0 +1,36 @@
+# Full Autonomous Codex Configuration
+# ~/.codex/config.toml
+#
+# For experienced users who want maximum autonomy.
+# Codex will execute commands with minimal interruption.
+
+model = "gpt-5-codex"
+model_reasoning_effort = "high"
+
+# Autonomous execution
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+
+# Enable all stable features
+[features]
+shell_tool = true
+parallel = true
+view_image_tool = true
+skills = true
+
+# Trust your main projects
+[projects."/home/user/work"]
+trust_level = "trusted"
+
+[projects."/home/user/personal"]
+trust_level = "trusted"
+
+# MCP servers for extended capabilities
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+
+# Shell environment
+[shell_environment_policy]
+inherit = "core"
+exclude = ["AWS_SECRET_*", "*_TOKEN", "*_KEY"]

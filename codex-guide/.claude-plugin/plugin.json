@@ -1,0 +1,9 @@
+{
+  "name": "codex-guide",
+  "version": "1.0.0",
+  "description": "Comprehensive guide for configuring and extending OpenAI Codex CLI",
+  "author": {
+    "name": "GGPrompts"
+  },
+  "keywords": ["codex", "openai", "configuration", "skills", "mcp"]
+}
