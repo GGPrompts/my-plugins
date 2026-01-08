@@ -1,0 +1,5 @@
+{
+  "name": "claude-code",
+  "version": "2.0.0",
+  "description": "Claude Code features, setup, configuration, slash commands, MCP servers, agent skills, hooks, and plugins"
+}
