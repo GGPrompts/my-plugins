@@ -183,6 +183,12 @@
       "category": "tools"
     },
     {
+      "name": "codex-guide",
+      "description": "Comprehensive guide for configuring and extending OpenAI Codex CLI",
+      "source": "./plugins/tools/codex-guide",
+      "category": "tools"
+    },
+    {
       "name": "xterm-js",
       "description": "xterm.js terminal patterns - React integration, WebSocket, state management",
       "source": "./plugins/terminal/xterm-js",
@@ -219,12 +225,6 @@
       "category": "terminal"
     },
     {
-      "name": "subagents",
-      "description": "Purpose-built subagents - frontend-builder, backend-builder, visual-creator, docs-writer, terminal-builder, claude-code-architect",
-      "source": "./plugins/subagents",
-      "category": "agents"
-    },
-    {
       "name": "bubbletea",
       "description": "Bubble Tea TUI framework patterns for Go terminal applications",
       "source": "./plugins/specialized/bubbletea",
@@ -246,18 +246,6 @@
       "name": "git-commands",
       "description": "Git shortcuts - /git:cm (commit), /git:cp (commit+push), /git:pr (create PR)",
       "source": "./plugins/specialized/git-commands",
-      "category": "specialized"
-    },
-    {
-      "name": "mcp-management",
-      "description": "Manage MCP servers - discover, analyze, and execute tools/prompts/resources",
-      "source": "./plugins/specialized/mcp-management",
-      "category": "specialized"
-    },
-    {
-      "name": "mcp-manager",
-      "description": "Manage MCP server integrations - discover tools, filter capabilities, execute MCP",
-      "source": "./plugins/specialized/mcp-manager",
       "category": "specialized"
     },
     {
