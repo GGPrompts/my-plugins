@@ -1,7 +1,7 @@
 {
-  "name": "codex-guide",
+  "name": "codexforclaude",
   "version": "1.0.0",
-  "description": "Comprehensive guide for configuring and extending OpenAI Codex CLI",
+  "description": "OpenAI Codex CLI configuration guide for Claude",
   "author": {
     "name": "GGPrompts"
   },

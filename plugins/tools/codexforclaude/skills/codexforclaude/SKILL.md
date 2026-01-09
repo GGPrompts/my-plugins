@@ -1,6 +1,6 @@
 ---
-name: codex-guide
-description: "Comprehensive guide for OpenAI Codex CLI configuration and development. Use when users ask about: codex config, ~/.codex/config.toml, codex sandbox policies, codex approval modes, creating codex skills, codex mcp servers, codex model settings, local LLM providers, or integrating tools with Codex."
+name: codexforclaude
+description: "OpenAI Codex CLI configuration guide for Claude. Use when users ask about: codex config, ~/.codex/config.toml, codex sandbox policies, codex approval modes, creating codex skills, codex mcp servers, codex model settings, local LLM providers, or integrating tools with Codex."
 ---
 
 # Codex CLI Configuration Guide
