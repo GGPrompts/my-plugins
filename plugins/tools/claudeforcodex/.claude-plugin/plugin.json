@@ -1,0 +1,5 @@
+{
+  "name": "claudeforcodex",
+  "version": "1.0.0",
+  "description": "Claude command to invoke OpenAI Codex for root cause analysis"
+}

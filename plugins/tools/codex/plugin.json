@@ -1,5 +1,0 @@
-{
-  "name": "codex",
-  "version": "1.0.0",
-  "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)"
-}
