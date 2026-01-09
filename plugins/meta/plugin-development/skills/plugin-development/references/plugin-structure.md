@@ -4,56 +4,75 @@
 
 Claude Code supports two plugin distribution approaches:
 
-| Model | Manifest | Use Case |
-|-------|----------|----------|
-| **Standalone** | `plugin.json` | Single focused plugin |
-| **Marketplace** | `marketplace.json` | Collection of related plugins |
+| Model | Manifest Location | Use Case |
+|-------|-------------------|----------|
+| **Standalone** | `.claude-plugin/plugin.json` | Single plugin = entire repo |
+| **Marketplace** | `.claude-plugin/marketplace.json` | Collection of plugins in one repo |
 
 **Choose ONE approach** - having both manifests may cause conflicts.
 
 ---
 
+## Marketplace Plugin Layout (MOST COMMON)
+
+When your repo contains **multiple plugins** via a marketplace, each plugin has `plugin.json` at its **root** (NOT in `.claude-plugin/`):
+
+```
+my-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json      # Lists all plugins
+└── plugins/
+    ├── tool-a/
+    │   ├── plugin.json       # AT ROOT (not .claude-plugin/)
+    │   ├── commands/
+    │   └── skills/
+    └── tool-b/
+        ├── plugin.json       # AT ROOT
+        ├── agents/
+        └── hooks/
+```
+
+**Key Point:** `.claude-plugin/` is ONLY at the marketplace root, NOT inside each plugin.
+
+---
+
 ## Standalone Plugin Layout
 
-A complete standalone plugin follows this structure:
+Only use this when your **entire repo IS the plugin** (no marketplace wrapper):
 
 ```
-my-plugin/
-├── .claude-plugin/           # Metadata directory (REQUIRED)
-│   └── plugin.json          # Plugin manifest (REQUIRED)
-├── commands/                 # Slash commands (optional)
-│   ├── deploy.md
-│   └── status.md
-├── agents/                   # Subagents (optional)
-│   ├── reviewer.md
-│   └── tester.md
-├── skills/                   # Agent Skills (optional)
-│   ├── code-reviewer/
-│   │   └── SKILL.md
-│   └── pdf-processor/
-│       ├── SKILL.md
-│       └── scripts/
-├── hooks/                    # Hook configurations (optional)
-│   └── hooks.json
-├── .mcp.json                # MCP server definitions (optional)
-├── scripts/                 # Utility scripts for hooks
-│   ├── format-code.sh
-│   └── validate.py
-├── LICENSE
-└── CHANGELOG.md
+my-plugin/                    # Repo root = plugin root
+├── .claude-plugin/
+│   └── plugin.json          # Standalone uses .claude-plugin/
+├── commands/
+├── agents/
+├── skills/
+├── hooks/
+└── .mcp.json
 ```
+
+---
+
+## Quick Reference
+
+| Setup | Manifest Location |
+|-------|-------------------|
+| Plugin inside marketplace | `plugins/my-tool/plugin.json` (at plugin root) |
+| Standalone plugin (whole repo) | `.claude-plugin/plugin.json` |
+| Marketplace manifest | `.claude-plugin/marketplace.json` |
 
 ## Critical Rules
 
-1. **`.claude-plugin/` contains ONLY `plugin.json`** - All other directories must be at plugin root
-2. **All paths in plugin.json are relative** - Must start with `./`
-3. **Component directories are at root level** - `commands/`, `agents/`, `skills/`, `hooks/` are siblings to `.claude-plugin/`
+1. **Marketplace plugins: `plugin.json` at plugin root** - NOT in `.claude-plugin/`
+2. **Standalone plugins: `plugin.json` in `.claude-plugin/`** - Only when repo = plugin
+3. **All paths in manifests are relative** - Must start with `./`
+4. **Component directories are at plugin root** - `commands/`, `agents/`, `skills/`, `hooks/`
 
 ## File Locations Reference
 
-| Component       | Default Location             | Purpose                          |
+| Component       | Location                     | Purpose                          |
 |-----------------|------------------------------|----------------------------------|
-| **Manifest**    | `.claude-plugin/plugin.json` | Required metadata file           |
+| **Manifest**    | `plugin.json` (marketplace plugin) or `.claude-plugin/plugin.json` (standalone) | Plugin metadata |
 | **Commands**    | `commands/`                  | Slash command markdown files     |
 | **Agents**      | `agents/`                    | Subagent markdown files          |
 | **Skills**      | `skills/`                    | Agent Skills with SKILL.md files |

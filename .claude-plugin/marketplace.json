@@ -135,9 +135,9 @@
       "category": "meta"
     },
     {
-      "name": "codex",
+      "name": "claudeforcodex",
       "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)",
-      "source": "./plugins/tools/codex",
+      "source": "./plugins/tools/claudeforcodex",
       "category": "tools"
     },
     {
@@ -183,9 +183,9 @@
       "category": "tools"
     },
     {
-      "name": "codex-guide",
+      "name": "codexforclaude",
       "description": "Comprehensive guide for configuring and extending OpenAI Codex CLI",
-      "source": "./plugins/tools/codex-guide",
+      "source": "./plugins/tools/codexforclaude",
       "category": "tools"
     },
     {
