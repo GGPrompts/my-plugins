@@ -1,0 +1,5 @@
+{
+  "name": "skill-eval",
+  "version": "1.0.0",
+  "description": "Reminds Claude to evaluate and activate relevant skills before implementation"
+}

@@ -135,6 +135,12 @@
       "category": "meta"
     },
     {
+      "name": "skill-eval",
+      "description": "UserPromptSubmit hook that reminds Claude to evaluate and use available skills and agents",
+      "source": "./plugins/meta/skill-eval",
+      "category": "meta"
+    },
+    {
       "name": "claudeforcodex",
       "description": "Query OpenAI Codex for root cause analysis (read-only, no edits)",
       "source": "./plugins/tools/claudeforcodex",
