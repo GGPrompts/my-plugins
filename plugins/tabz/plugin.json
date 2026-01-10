@@ -1,0 +1,5 @@
+{
+  "name": "tabz",
+  "version": "1.0.0",
+  "description": "Browser automation and terminal spawning via TabzChrome - screenshots, clicks, forms, page inspection, network capture, terminal creation"
+}
