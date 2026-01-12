@@ -58,6 +58,29 @@ skill-name/
 └── assets/               # Optional: files used in output
 ```
 
+## Skill Placement in Plugins
+
+Skills live in a plugin's `skills/` directory - **ONE level deep only**:
+
+```
+my-plugin/
+├── plugin.json
+└── skills/
+    ├── skill-a/          # ✅ Correct
+    │   └── SKILL.md
+    └── skill-b/          # ✅ Correct
+        └── SKILL.md
+
+# ❌ WRONG - nested skills won't be discovered:
+└── skills/
+    └── parent/
+        └── skills/       # Nesting breaks discovery!
+            └── child/
+                └── SKILL.md
+```
+
+**Key rule:** Never nest skills inside skills. Each skill is a direct child of `skills/`.
+
 ## Creation Workflow
 
 1. **Understand** - Gather concrete usage examples

@@ -107,60 +107,11 @@
       "keywords": ["pdf", "word", "docx", "presentation", "spreadsheet", "excel", "document", "report"]
     },
     {
-      "name": "skill-creator",
-      "description": "Create Claude Code skills with proper structure and progressive disclosure",
-      "source": "./plugins/meta/skill-creator",
+      "name": "meta",
+      "description": "Meta development skills - plugin creation, skill scaffolding, agent design, MCP servers, context engineering",
+      "source": "./plugins/meta",
       "category": "meta",
-      "keywords": ["skill", "create", "scaffold", "structure", "claude", "plugin"]
-    },
-    {
-      "name": "mcp-builder",
-      "description": "Build MCP servers in Python (FastMCP) and Node.js - design patterns and best practices",
-      "source": "./plugins/meta/mcp-builder",
-      "category": "meta",
-      "keywords": ["mcp", "server", "fastmcp", "protocol", "tool", "build", "python", "node"]
-    },
-    {
-      "name": "plugin-development",
-      "description": "Create Claude Code plugins - commands, agents, skills, hooks, MCP servers",
-      "source": "./plugins/meta/plugin-development",
-      "category": "meta",
-      "keywords": ["plugin", "command", "agent", "skill", "hook", "mcp", "develop", "claude"]
-    },
-    {
-      "name": "claude-code",
-      "description": "Claude Code best practices and usage patterns",
-      "source": "./plugins/meta/claude-code",
-      "category": "meta",
-      "keywords": ["claude", "code", "practice", "pattern", "usage", "tips"]
-    },
-    {
-      "name": "agent-creator",
-      "description": "Create Claude Code agents with proper frontmatter and system prompts",
-      "source": "./plugins/meta/agent-creator",
-      "category": "meta",
-      "keywords": ["agent", "create", "frontmatter", "prompt", "system", "claude"]
-    },
-    {
-      "name": "skill-commands",
-      "description": "Skill management - /skill:create to scaffold new Claude Code skills",
-      "source": "./plugins/meta/skill-commands",
-      "category": "meta",
-      "keywords": ["skill", "command", "create", "scaffold", "manage"]
-    },
-    {
-      "name": "context-engineering",
-      "description": "Context engineering patterns for effective LLM prompting",
-      "source": "./plugins/meta/context-engineering",
-      "category": "meta",
-      "keywords": ["context", "engineering", "prompt", "llm", "effective", "pattern"]
-    },
-    {
-      "name": "skill-eval",
-      "description": "UserPromptSubmit hook that reminds Claude to evaluate and use available skills and agents",
-      "source": "./plugins/meta/skill-eval",
-      "category": "meta",
-      "keywords": ["skill", "eval", "evaluate", "hook", "remind", "activate"]
+      "keywords": ["plugin", "skill", "agent", "mcp", "context", "engineering", "claude", "code", "development"]
     },
     {
       "name": "claudeforcodex",

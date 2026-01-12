@@ -65,8 +65,10 @@ my-plugin/                    # Repo root = plugin root
 
 1. **Marketplace plugins: `plugin.json` at plugin root** - NOT in `.claude-plugin/`
 2. **Standalone plugins: `plugin.json` in `.claude-plugin/`** - Only when repo = plugin
-3. **All paths in manifests are relative** - Must start with `./`
-4. **Component directories are at plugin root** - `commands/`, `agents/`, `skills/`, `hooks/`
+3. **Skills must be ONE level deep** - `skills/name/SKILL.md` (NO nesting: `skills/a/skills/b/`)
+4. **All paths in manifests are relative** - Must start with `./`
+5. **Component directories are at plugin root** - `commands/`, `agents/`, `skills/`, `hooks/`
+6. **No `plugin.json` per skill** - Only one `plugin.json` per plugin
 
 ## File Locations Reference
 

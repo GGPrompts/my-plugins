@@ -1,0 +1,22 @@
+{
+  "name": "meta",
+  "version": "1.0.0",
+  "description": "Meta development skills - plugin creation, skill scaffolding, agent design, MCP servers, context engineering",
+  "skills": [
+    "./skills/plugin-development",
+    "./skills/skill-creator",
+    "./skills/agent-creator",
+    "./skills/mcp-builder",
+    "./skills/claude-code",
+    "./skills/context-engineering",
+    "./skills/skill-commands"
+  ],
+  "agents": [
+    "./agents/plugin-validator",
+    "./agents/skill-reviewer",
+    "./agents/agent-creator"
+  ],
+  "commands": [
+    "./commands/create"
+  ]
+}

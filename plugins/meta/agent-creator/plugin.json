@@ -1,5 +1,0 @@
-{
-  "name": "agent-creator",
-  "version": "1.0.0",
-  "description": "Create Claude Code agents with proper frontmatter and system prompts"
-}

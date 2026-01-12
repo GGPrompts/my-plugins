@@ -89,6 +89,35 @@ my-marketplace/
 | `plugins[].category` | string | Category for organization |
 | `plugins[].author` | object | Plugin-specific author |
 | `plugins[].tags` | array | Discovery keywords |
+| `plugins[].skills` | array | **Explicit skill paths** (recommended) |
+| `plugins[].strict` | boolean | Enable strict validation |
+
+## Skills Array (Recommended)
+
+Anthropic's official marketplace explicitly lists skills for each plugin:
+
+```json
+{
+  "plugins": [
+    {
+      "name": "document-skills",
+      "description": "Document processing suite",
+      "source": "./",
+      "skills": [
+        "./skills/xlsx",
+        "./skills/docx",
+        "./skills/pptx",
+        "./skills/pdf"
+      ]
+    }
+  ]
+}
+```
+
+**Why use explicit skills array?**
+- Ensures skills are discovered correctly
+- Avoids relying on auto-discovery which may miss nested paths
+- Documents exactly which skills a plugin provides
 
 ## Categories
 
@@ -113,8 +142,12 @@ Categories serve as:
 Users install from marketplaces via `/plugin`:
 
 ```bash
-# Add marketplace first
+# Add marketplace from GitHub
 /plugin add https://github.com/user/my-marketplace
+
+# Add specific branch or tag (v2.0.28+)
+/plugin add https://github.com/user/my-marketplace#develop
+/plugin add https://github.com/user/my-marketplace#v1.0.0
 
 # Install individual plugin
 /plugin install tool-a@my-marketplace
@@ -122,6 +155,30 @@ Users install from marketplaces via `/plugin`:
 # Install bundle
 /plugin install full-bundle@my-marketplace
 ```
+
+## Auto-Update Configuration
+
+Marketplaces can be configured to auto-update or stay pinned (v2.0.70+):
+
+```bash
+# Toggle auto-update for a marketplace
+/plugins  # Then select marketplace and toggle auto-update
+```
+
+## Team Configuration
+
+Share marketplace recommendations with your team via `settings.json` (v2.0.12+):
+
+```json
+{
+  "extraKnownMarketplaces": [
+    "https://github.com/company/internal-plugins",
+    "https://github.com/company/tools#stable"
+  ]
+}
+```
+
+These marketplaces appear in `/plugins discover` for team members.
 
 ## Command Prefixing
 
