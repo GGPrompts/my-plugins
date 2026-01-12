@@ -1,6 +1,7 @@
 ---
 name: Claude Code Expert
 description: Use when users ask about Claude Code features, setup, slash commands, MCP servers, agent skills, hooks, plugins, IDE integration, enterprise deployment, or troubleshooting Claude Code issues.
+user-invocable: true
 version: 1.0.0
 ---
 

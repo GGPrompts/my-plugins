@@ -1,6 +1,7 @@
 ---
 name: skill-commands
 description: Create a new agent skill
+user-invocable: true
 argument-hint: [prompt]
 ---
 
