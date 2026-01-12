@@ -1,5 +1,8 @@
 {
   "name": "backend-development",
   "version": "1.0.0",
-  "description": "Build robust backend systems - Node.js, Python, Go, APIs, databases, authentication"
+  "description": "Build robust backend systems - Node.js, Python, Go, APIs, databases, authentication",
+  "agents": [
+    "./agents/backend-expert.md"
+  ]
 }
