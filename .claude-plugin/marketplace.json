@@ -294,6 +294,13 @@
       "source": "./plugins/tabz",
       "category": "terminal",
       "keywords": ["tabz", "browser", "automation", "screenshot", "click", "terminal", "spawn", "mcp", "chrome"]
+    },
+    {
+      "name": "opus-agents",
+      "description": "Opus-powered versions of built-in agents for complex implementation work",
+      "source": "./plugins/opus-agents",
+      "category": "meta",
+      "keywords": ["opus", "agent", "general-purpose", "implementation"]
     }
   ]
 }
