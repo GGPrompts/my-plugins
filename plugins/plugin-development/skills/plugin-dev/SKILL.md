@@ -197,6 +197,79 @@ Run `claude --debug` to see:
 | Hooks not firing | Script not executable | Run `chmod +x script.sh` |
 | MCP server fails | Missing CLAUDE_PLUGIN_ROOT | Use `${CLAUDE_PLUGIN_ROOT}` variable |
 | Path errors | Absolute paths used | All paths must be relative with `./` |
+| Plugins not appearing after update | Stale cache | Clear cache: `rm -rf ~/.claude/plugins/cache/<marketplace>` |
+
+## CLI Commands
+
+Claude Code provides CLI commands for plugin management outside the interactive menu.
+
+### Plugin Management
+
+```bash
+# Install a plugin (user scope by default)
+claude plugin install <plugin>@<marketplace>
+claude plugin install plugin-development@my-plugins
+
+# Install at project scope
+claude plugin install <plugin>@<marketplace> --scope project
+
+# Uninstall a plugin
+claude plugin uninstall <plugin>@<marketplace>
+
+# Enable/disable without uninstalling
+claude plugin enable <plugin>@<marketplace>
+claude plugin disable <plugin>@<marketplace>
+
+# Update a plugin (restart required after)
+claude plugin update <plugin>@<marketplace>
+
+# Validate plugin/marketplace structure
+claude plugin validate /path/to/plugin
+```
+
+### Marketplace Management
+
+```bash
+# List marketplaces
+claude plugin marketplace list
+
+# Add a marketplace (local directory)
+claude plugin marketplace add /path/to/marketplace
+
+# Add from GitHub
+claude plugin marketplace add https://github.com/user/repo
+
+# Remove a marketplace
+claude plugin marketplace remove <marketplace-name>
+
+# Update marketplace cache
+claude plugin marketplace update <marketplace-name>
+```
+
+### Session-Only Loading
+
+```bash
+# Load plugins from directory for this session only (not installed)
+claude --plugin-dir /path/to/plugins
+
+# Multiple directories
+claude --plugin-dir /path/one --plugin-dir /path/two
+```
+
+### Cache Management
+
+Plugin data is cached at `~/.claude/plugins/`:
+- `cache/` - Installed plugin files by marketplace
+- `installed_plugins.json` - Installation records
+- `known_marketplaces.json` - Registered marketplaces
+
+**Clear cache to force refresh:**
+```bash
+# Clear specific marketplace cache
+rm -rf ~/.claude/plugins/cache/<marketplace-name>
+
+# Then reinstall or restart to repopulate
+```
 
 ## Resources
 
