@@ -107,11 +107,46 @@
       "keywords": ["pdf", "word", "docx", "presentation", "spreadsheet", "excel", "document", "report"]
     },
     {
-      "name": "meta",
-      "description": "Meta development skills - plugin creation, skill scaffolding, agent design, MCP servers, context engineering",
-      "source": "./plugins/meta",
+      "name": "plugin-development",
+      "description": "Create and manage Claude Code plugins - structure, manifests, debugging, marketplaces",
+      "source": "./plugins/plugin-development",
       "category": "meta",
-      "keywords": ["plugin", "skill", "agent", "mcp", "context", "engineering", "claude", "code", "development"]
+      "keywords": ["plugin", "manifest", "marketplace", "debug", "structure", "claude", "code"]
+    },
+    {
+      "name": "skill-creator",
+      "description": "Create effective Claude Code skills with proper structure and patterns",
+      "source": "./plugins/skill-creator",
+      "category": "meta",
+      "keywords": ["skill", "create", "scaffold", "pattern", "template"]
+    },
+    {
+      "name": "agent-creator",
+      "description": "Create effective Claude Code agents with specialized prompts and tool configurations",
+      "source": "./plugins/agent-creator",
+      "category": "meta",
+      "keywords": ["agent", "subagent", "prompt", "tools", "spawn"]
+    },
+    {
+      "name": "mcp-builder",
+      "description": "Build MCP servers to integrate external APIs with Claude - Python FastMCP and Node SDK patterns",
+      "source": "./plugins/mcp-builder",
+      "category": "meta",
+      "keywords": ["mcp", "server", "api", "integration", "fastmcp", "sdk"]
+    },
+    {
+      "name": "claude-code",
+      "description": "Claude Code expert - features, setup, slash commands, MCP, hooks, plugins, IDE integration",
+      "source": "./plugins/claude-code",
+      "category": "meta",
+      "keywords": ["claude", "code", "features", "setup", "hooks", "ide", "enterprise"]
+    },
+    {
+      "name": "context-engineering",
+      "description": "Context engineering for AI agents - optimization, compression, memory systems, multi-agent patterns",
+      "source": "./plugins/context-engineering",
+      "category": "meta",
+      "keywords": ["context", "engineering", "optimization", "memory", "agent", "llm"]
     },
     {
       "name": "claudeforcodex",

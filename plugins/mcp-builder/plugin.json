@@ -1,0 +1,5 @@
+{
+  "name": "mcp-builder",
+  "version": "1.0.0",
+  "description": "Build MCP servers to integrate external APIs with Claude - Python FastMCP and Node SDK patterns"
+}

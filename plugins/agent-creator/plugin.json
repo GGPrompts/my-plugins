@@ -1,0 +1,5 @@
+{
+  "name": "agent-creator",
+  "version": "1.0.0",
+  "description": "Create effective Claude Code agents with specialized prompts and tool configurations"
+}
