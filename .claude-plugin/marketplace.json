@@ -157,10 +157,10 @@
     },
     {
       "name": "code-review",
-      "description": "Code review practices - receiving feedback, verification gates, preventing false claims",
+      "description": "Code review practices, automated review with confidence scoring, security scanning, and silent failure detection",
       "source": "./plugins/tools/code-review",
       "category": "tools",
-      "keywords": ["review", "code", "feedback", "verify", "quality", "pr", "pull-request"]
+      "keywords": ["review", "code", "feedback", "verify", "quality", "pr", "pull-request", "security", "silent-failures", "automated"]
     },
     {
       "name": "repomix",

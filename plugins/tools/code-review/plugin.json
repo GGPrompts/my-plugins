@@ -1,5 +1,14 @@
 {
   "name": "code-review",
   "version": "1.0.0",
-  "description": "Code review practices - receiving feedback, verification gates, preventing false claims"
+  "description": "Code review practices, automated review, security scanning, and silent failure detection",
+  "skills": [
+    "./skills/code-review",
+    "./skills/review",
+    "./skills/security",
+    "./skills/silent-failures"
+  ],
+  "agents": [
+    "./agents/reviewer.md"
+  ]
 }
