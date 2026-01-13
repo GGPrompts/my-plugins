@@ -1,7 +1,5 @@
 ---
-name: plugin-development
 description: Create and manage Claude Code plugins including commands, agents, skills, hooks, and MCP servers. This skill should be used when building new plugins, debugging plugin issues, understanding plugin structure, or working with plugin marketplaces.
-user-invocable: true
 ---
 
 # Plugin Development
@@ -105,7 +103,6 @@ Full manifest - see `references/manifest-schema.md`.
 ```markdown
 ---
 description: Brief description for autocomplete
-user-invocable: true
 ---
 
 # Command Name
@@ -117,7 +114,6 @@ Instructions for the command...
 ```markdown
 ---
 description: What this agent specializes in
-user-invocable: true
 capabilities: ["task1", "task2"]
 ---
 
@@ -129,9 +125,7 @@ Agent instructions...
 **Skills** - Create `skills/name/SKILL.md`:
 ```markdown
 ---
-name: skill-name
 description: What the skill does
-user-invocable: true
 ---
 
 # Skill Name

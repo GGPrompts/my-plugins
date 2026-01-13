@@ -1,7 +1,5 @@
 ---
-name: context-engineering
 description: Master context engineering for AI agent systems. Use when designing agent architectures, debugging context failures, optimizing token usage, implementing memory systems, building multi-agent coordination, evaluating agent performance, or developing LLM-powered pipelines.
-user-invocable: true
 version: 1.0.0
 ---
 

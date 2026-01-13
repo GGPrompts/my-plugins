@@ -1,7 +1,5 @@
 ---
-name: agent-creator
 description: Guide for creating effective Claude Code agents. This skill should be used when users want to create a new agent (or update an existing agent) that configures Claude with specialized system prompts, tool restrictions, model selection, and MCP/skill integrations.
-user-invocable: true
 ---
 
 # Agent Creator
@@ -49,9 +47,7 @@ Agents are stored as `.md` files in:
 
 ```markdown
 ---
-name: agent-name
 description: "When to use this agent. Be specific about triggers."
-user-invocable: true
 ---
 
 System prompt content goes here.
@@ -113,9 +109,7 @@ The system prompt (Markdown body after frontmatter) defines the agent's behavior
 
 ```markdown
 ---
-name: example-agent
 description: "..."
-user-invocable: true
 ---
 
 [Role statement - who this agent is]
