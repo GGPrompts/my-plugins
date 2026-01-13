@@ -28,8 +28,16 @@ Skills are modular packages that extend Claude's capabilities with specialized k
 | Directory structure, SKILL.md format, bundled resources | [references/skill-anatomy.md](./references/skill-anatomy.md) |
 | Step-by-step creation process (Steps 1-6) | [references/creation-process.md](./references/creation-process.md) |
 | File size limits, script requirements, best practices | [references/requirements.md](./references/requirements.md) |
+| Templates, examples, output formatting | [references/output-patterns.md](./references/output-patterns.md) |
+| Sequential vs conditional workflows, degrees of freedom | [references/workflows.md](./references/workflows.md) |
 
 ## Key Principles
+
+### Conciseness
+
+**"The context window is a public good."** Only include information Claude doesn't already possess. Prefer concise examples over verbose explanations.
+
+**What NOT to include:** README.md, installation guides, changelogs, or auxiliary documentation.
 
 ### Progressive Disclosure
 
@@ -38,6 +46,18 @@ Skills use three-level loading:
 1. **Metadata** (~100 words) - Always in context
 2. **SKILL.md body** (<5k words) - When skill triggers
 3. **Bundled resources** - Loaded as needed
+
+### Degrees of Freedom
+
+Match instruction specificity to task fragility:
+
+| Freedom | Format | Use When |
+|---------|--------|----------|
+| High | Text instructions | Flexible approaches OK |
+| Medium | Pseudocode | Structure matters, some variation OK |
+| Low | Specific scripts | Reliability critical |
+
+See [references/workflows.md](./references/workflows.md) for examples.
 
 ### File Size Limit
 
