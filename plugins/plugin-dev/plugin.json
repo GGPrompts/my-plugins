@@ -1,0 +1,11 @@
+{
+  "name": "plugin-dev",
+  "version": "1.0.0",
+  "description": "Claude Code plugin development toolkit - 7 specialized skills for creating plugins, commands, agents, skills, hooks, and MCP integrations",
+  "author": {
+    "name": "Anthropic",
+    "url": "https://github.com/anthropics/claude-code"
+  },
+  "license": "MIT",
+  "keywords": ["plugin", "development", "commands", "agents", "skills", "hooks", "mcp"]
+}

@@ -107,11 +107,11 @@
       "keywords": ["pdf", "word", "docx", "presentation", "spreadsheet", "excel", "document", "report"]
     },
     {
-      "name": "plugin-development",
-      "description": "Create and manage Claude Code plugins - structure, manifests, debugging, marketplaces",
-      "source": "./plugins/plugin-development",
+      "name": "plugin-dev",
+      "description": "Claude Code plugin development toolkit - 8 specialized skills for plugins, commands, agents, skills, hooks, MCP, marketplaces, and settings",
+      "source": "./plugins/plugin-dev",
       "category": "meta",
-      "keywords": ["plugin", "manifest", "marketplace", "debug", "structure", "claude", "code"]
+      "keywords": ["plugin", "manifest", "marketplace", "debug", "structure", "claude", "code", "development"]
     },
     {
       "name": "skill-creator",
