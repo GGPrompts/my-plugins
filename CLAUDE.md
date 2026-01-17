@@ -20,24 +20,25 @@ This repo uses the **marketplace pattern** - one marketplace containing multiple
 ```
 my-plugins/
 ├── .claude-plugin/
-│   └── marketplace.json         # Lists all plugins (ONLY file here)
+│   └── marketplace.json         # Lists all plugins
 ├── plugins/
 │   ├── frontend/                # Category: frontend development
 │   │   ├── ui-styling/          # Plugin: Tailwind + shadcn/ui
-│   │   │   ├── plugin.json      # Plugin manifest (at plugin root)
+│   │   │   ├── .claude-plugin/
+│   │   │   │   └── plugin.json  # Plugin manifest
 │   │   │   └── skills/
 │   │   │       └── ui-styling/
 │   │   │           └── SKILL.md
 │   │   └── frontend-design/     # Plugin: production UI
-│   │       ├── plugin.json
+│   │       ├── .claude-plugin/
+│   │       │   └── plugin.json
 │   │       └── skills/
 │   ├── backend/                 # Category: backend development
 │   ├── visual/                  # Category: visual/media
 │   ├── tools/                   # Category: dev tools
 │   ├── terminal/                # Category: terminal utilities
 │   ├── specialized/             # Category: domain-specific
-│   ├── tabz/                    # Plugin: browser automation
-│   ├── plugin-development/      # Meta: plugin creation
+│   ├── plugin-dev/              # Meta: plugin creation
 │   ├── skill-creator/           # Meta: skill creation
 │   ├── agent-creator/           # Meta: agent creation
 │   ├── mcp-builder/             # Meta: MCP server building
@@ -49,12 +50,12 @@ my-plugins/
 ### Critical Rules
 
 1. **Marketplace root has `.claude-plugin/marketplace.json`** - Lists all available plugins
-2. **Each plugin has `plugin.json` at its root** - NOT in `.claude-plugin/` subfolder
+2. **Each plugin has `.claude-plugin/plugin.json`** - Standard portable pattern
 3. **Skills are `skills/<name>/SKILL.md`** - One level deep, NOT nested skills inside skills
-4. **Commands are `commands/<name>.md`** - Markdown files with YAML frontmatter
-5. **Agents are `agents/<name>.md`** - Markdown files with YAML frontmatter
-6. **Skills hot-reload** - Changes in `~/.claude/skills` or `.claude/skills` take effect immediately
-7. **Skills/Commands unified** - Skills visible in `/` menu by default (v2.1.3+)
+4. **References are `skills/<name>/references/`** - At same level as SKILL.md
+5. **Commands are `commands/<name>.md`** - Markdown files with YAML frontmatter
+6. **Agents are `agents/<name>.md`** - Markdown files with YAML frontmatter
+7. **Skills hot-reload** - Changes take effect immediately (hooks require restart)
 
 ### marketplace.json Format
 
@@ -78,9 +79,9 @@ my-plugins/
 
 | Mistake | Correct |
 |---------|---------|
-| `plugins/X/.claude-plugin/plugin.json` | `plugins/X/plugin.json` |
+| `plugins/X/plugin.json` (at root) | `plugins/X/.claude-plugin/plugin.json` |
 | `skills/parent/skills/child/SKILL.md` | `skills/child/SKILL.md` (flatten) |
-| Missing `skills` array in marketplace.json | Add explicit skill paths if needed |
+| References at plugin root | `skills/<name>/references/` inside skill |
 | Individual `plugin.json` per skill | Only one `plugin.json` per plugin |
 
 ---
@@ -96,8 +97,7 @@ my-plugins/
 | `tools` | debugging, code-review, problem-solving, sequential-thinking, docs-seeker, repomix, validate-plan, codex | Dev tools, debugging, review |
 | `terminal` | xterm-js, pmux, brief, wipe, restart, handoff | Terminal utilities, session management |
 | `specialized` | bubbletea, shopify, git-commands, google-adk-python | Domain-specific tools |
-| `tabz` | tabz | Browser automation via TabzChrome |
-| `meta` | plugin-development, skill-creator, agent-creator, mcp-builder, claude-code, context-engineering | Plugin/skill/agent creation |
+| `meta` | plugin-dev, skill-creator, agent-creator, mcp-builder, claude-code, context-engineering | Plugin/skill/agent creation |
 
 ---
 
@@ -118,10 +118,11 @@ Skills use different invocation formats depending on their scope:
 
 1. Create plugin directory under appropriate category:
    ```bash
-   mkdir -p plugins/frontend/my-plugin/skills/my-skill
+   mkdir -p plugins/frontend/my-plugin/.claude-plugin
+   mkdir -p plugins/frontend/my-plugin/skills/my-skill/references
    ```
 
-2. Create `plugin.json` at plugin root:
+2. Create `.claude-plugin/plugin.json`:
    ```json
    {
      "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
@@ -215,8 +216,8 @@ After installation, restart Claude Code to load plugins.
 ## Development Notes
 
 - Use `/restart` to reload plugins after changes
-- Skills hot-reload without restart
+- Skills hot-reload without restart (hooks require restart)
 - Check `/plugin` to see loaded plugins
-- Use `/plugin-development:plugin-dev` skill for plugin creation guidance
+- Use `/plugin-dev:buildingplugins` for comprehensive plugin creation guidance
 - Use `/skill-creator:skill-creation` for skill patterns
 - Use `/agent-creator:agent-design` for agent patterns

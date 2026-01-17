@@ -77,7 +77,7 @@ tools:
 
 Common tools: `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`, `Task`, `WebSearch`, `WebFetch`, `TodoWrite`
 
-See `references/tool-catalog.md` for the complete catalog with use cases.
+See `${CLAUDE_PLUGIN_ROOT}/references/tool-catalog.md` for the complete catalog with use cases.
 
 ## Agent Creation Process
 
@@ -103,7 +103,7 @@ Default path is `~/.claude/agents/` (user-level). Use `.claude/agents/` for proj
 
 ### Step 3: Write the System Prompt
 
-The system prompt (Markdown body after frontmatter) defines the agent's behavior. Follow Opus 4.5 prompting best practices from `references/opus-prompting.md`.
+The system prompt (Markdown body after frontmatter) defines the agent's behavior. Follow Opus 4.5 prompting best practices from `${CLAUDE_PLUGIN_ROOT}/references/opus-prompting.md`.
 
 #### System Prompt Structure
 
@@ -176,7 +176,7 @@ For MCP tools, mention them explicitly in the system prompt so the agent knows t
 
 ## Opus 4.5 Prompting Guidelines
 
-Claude Opus 4.5 has specific characteristics that affect agent design. See `references/opus-prompting.md` for full details.
+Claude Opus 4.5 has specific characteristics that affect agent design. See `${CLAUDE_PLUGIN_ROOT}/references/opus-prompting.md` for full details.
 
 ### Key Points
 
@@ -199,7 +199,7 @@ improvements beyond what was asked.
 
 ## Agent Patterns
 
-See `references/agent-patterns.md` for common archetypes:
+See `${CLAUDE_PLUGIN_ROOT}/references/agent-patterns.md` for common archetypes:
 
 - **Researcher** - Read-only exploration and analysis
 - **Specialist** - Domain expert with focused tools

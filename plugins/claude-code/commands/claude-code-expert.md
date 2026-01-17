@@ -50,48 +50,48 @@ Use when users need help with:
 Load these references when needed for detailed guidance:
 
 ### Getting Started
-- **Installation & Setup**: `references/getting-started.md`
+- **Installation & Setup**: `${CLAUDE_PLUGIN_ROOT}/references/getting-started.md`
   - Prerequisites, installation methods, authentication, first run
 
 ### Development Workflows
-- **Slash Commands**: `references/slash-commands.md`
+- **Slash Commands**: `${CLAUDE_PLUGIN_ROOT}/references/slash-commands.md`
   - Complete command catalog: /cook, /plan, /debug, /test, /fix:*, /docs:*, /git:*, /design:*, /content:*
 
-- **Agent Skills**: `references/agent-skills.md`
+- **Agent Skills**: `${CLAUDE_PLUGIN_ROOT}/references/agent-skills.md`
   - Creating skills, skill.json format, best practices, API usage
 
 ### Integration & Extension
-- **MCP Integration**: `references/mcp-integration.md`
+- **MCP Integration**: `${CLAUDE_PLUGIN_ROOT}/references/mcp-integration.md`
   - Configuration, common servers, remote servers
 
-- **Hooks & Plugins**: `references/hooks-and-plugins.md`
+- **Hooks & Plugins**: `${CLAUDE_PLUGIN_ROOT}/references/hooks-and-plugins.md`
   - Hook types, configuration, environment variables, plugin structure, installation
 
 ### Configuration & Settings
-- **Configuration**: `references/configuration.md`
+- **Configuration**: `${CLAUDE_PLUGIN_ROOT}/references/configuration.md`
   - Settings hierarchy, key settings, model configuration, output styles
 
 ### Enterprise & Production
-- **Enterprise Features**: `references/enterprise-features.md`
+- **Enterprise Features**: `${CLAUDE_PLUGIN_ROOT}/references/enterprise-features.md`
   - IAM, SSO, RBAC, sandboxing, audit logging, deployment options, monitoring
 
-- **IDE Integration**: `references/ide-integration.md`
+- **IDE Integration**: `${CLAUDE_PLUGIN_ROOT}/references/ide-integration.md`
   - VS Code extension, JetBrains plugin setup and features
 
-- **CI/CD Integration**: `references/cicd-integration.md`
+- **CI/CD Integration**: `${CLAUDE_PLUGIN_ROOT}/references/cicd-integration.md`
   - GitHub Actions, GitLab CI/CD workflow examples
 
 ### Advanced Usage
-- **Advanced Features**: `references/advanced-features.md`
+- **Advanced Features**: `${CLAUDE_PLUGIN_ROOT}/references/advanced-features.md`
   - Extended thinking, prompt caching, checkpointing, memory management
 
-- **Troubleshooting**: `references/troubleshooting.md`
+- **Troubleshooting**: `${CLAUDE_PLUGIN_ROOT}/references/troubleshooting.md`
   - Common issues, authentication failures, MCP problems, performance, debug mode
 
-- **API Reference**: `references/api-reference.md`
+- **API Reference**: `${CLAUDE_PLUGIN_ROOT}/references/api-reference.md`
   - Admin API, Messages API, Files API, Models API, Skills API
 
-- **Best Practices**: `references/best-practices.md`
+- **Best Practices**: `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
   - Project organization, security, performance, team collaboration, cost management
 
 ## Common Workflows
@@ -152,31 +152,31 @@ When responding to Claude Code questions:
 - Multiple references can be loaded for complex queries
 - Use grep patterns if searching within references
 
-**For setup/installation questions:** Load `references/getting-started.md`
+**For setup/installation questions:** Load `${CLAUDE_PLUGIN_ROOT}/references/getting-started.md`
 
-**For slash command questions:** Load `references/slash-commands.md`
+**For slash command questions:** Load `${CLAUDE_PLUGIN_ROOT}/references/slash-commands.md`
 
-**For skill creation:** Load `references/agent-skills.md`
+**For skill creation:** Load `${CLAUDE_PLUGIN_ROOT}/references/agent-skills.md`
 
-**For MCP questions:** Load `references/mcp-integration.md`
+**For MCP questions:** Load `${CLAUDE_PLUGIN_ROOT}/references/mcp-integration.md`
 
-**For hooks/plugins:** Load `references/hooks-and-plugins.md`
+**For hooks/plugins:** Load `${CLAUDE_PLUGIN_ROOT}/references/hooks-and-plugins.md`
 
-**For configuration:** Load `references/configuration.md`
+**For configuration:** Load `${CLAUDE_PLUGIN_ROOT}/references/configuration.md`
 
-**For enterprise deployment:** Load `references/enterprise-features.md`
+**For enterprise deployment:** Load `${CLAUDE_PLUGIN_ROOT}/references/enterprise-features.md`
 
-**For IDE integration:** Load `references/ide-integration.md`
+**For IDE integration:** Load `${CLAUDE_PLUGIN_ROOT}/references/ide-integration.md`
 
-**For CI/CD:** Load `references/cicd-integration.md`
+**For CI/CD:** Load `${CLAUDE_PLUGIN_ROOT}/references/cicd-integration.md`
 
-**For advanced features:** Load `references/advanced-features.md`
+**For advanced features:** Load `${CLAUDE_PLUGIN_ROOT}/references/advanced-features.md`
 
-**For troubleshooting:** Load `references/troubleshooting.md`
+**For troubleshooting:** Load `${CLAUDE_PLUGIN_ROOT}/references/troubleshooting.md`
 
-**For API usage:** Load `references/api-reference.md`
+**For API usage:** Load `${CLAUDE_PLUGIN_ROOT}/references/api-reference.md`
 
-**For best practices:** Load `references/best-practices.md`
+**For best practices:** Load `${CLAUDE_PLUGIN_ROOT}/references/best-practices.md`
 
 **Documentation links:**
 - Main docs: https://docs.claude.com/claude-code

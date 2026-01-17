@@ -25,11 +25,11 @@ Skills are modular packages that extend Claude's capabilities with specialized k
 
 | Topic | Reference |
 |-------|-----------|
-| Directory structure, SKILL.md format, bundled resources | [references/skill-anatomy.md](./references/skill-anatomy.md) |
-| Step-by-step creation process (Steps 1-6) | [references/creation-process.md](./references/creation-process.md) |
-| File size limits, script requirements, best practices | [references/requirements.md](./references/requirements.md) |
-| Templates, examples, output formatting | [references/output-patterns.md](./references/output-patterns.md) |
-| Sequential vs conditional workflows, degrees of freedom | [references/workflows.md](./references/workflows.md) |
+| Directory structure, SKILL.md format, bundled resources | [references/skill-anatomy.md](${CLAUDE_PLUGIN_ROOT}/references/skill-anatomy.md) |
+| Step-by-step creation process (Steps 1-6) | [references/creation-process.md](${CLAUDE_PLUGIN_ROOT}/references/creation-process.md) |
+| File size limits, script requirements, best practices | [references/requirements.md](${CLAUDE_PLUGIN_ROOT}/references/requirements.md) |
+| Templates, examples, output formatting | [references/output-patterns.md](${CLAUDE_PLUGIN_ROOT}/references/output-patterns.md) |
+| Sequential vs conditional workflows, degrees of freedom | [references/workflows.md](${CLAUDE_PLUGIN_ROOT}/references/workflows.md) |
 
 ## Key Principles
 
@@ -57,7 +57,7 @@ Match instruction specificity to task fragility:
 | Medium | Pseudocode | Structure matters, some variation OK |
 | Low | Specific scripts | Reliability critical |
 
-See [references/workflows.md](./references/workflows.md) for examples.
+See [references/workflows.md](${CLAUDE_PLUGIN_ROOT}/references/workflows.md) for examples.
 
 ### File Size Limit
 
@@ -109,7 +109,7 @@ my-plugin/
 5. **Package** - Run `scripts/package_skill.py <path>`
 6. **Iterate** - Test, improve, repeat
 
-See [references/creation-process.md](./references/creation-process.md) for detailed steps.
+See [references/creation-process.md](${CLAUDE_PLUGIN_ROOT}/references/creation-process.md) for detailed steps.
 
 ## External References
 

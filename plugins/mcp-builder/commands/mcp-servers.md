@@ -18,10 +18,10 @@ Create high-quality MCP servers that enable LLMs to effectively interact with ex
 
 | Topic | Reference |
 |-------|-----------|
-| Universal guidelines, naming, response formats | [references/mcp_best_practices.md](./references/mcp_best_practices.md) |
-| Python/FastMCP implementation | [references/python_mcp_server.md](./references/python_mcp_server.md) |
-| Node/TypeScript implementation | [references/node_mcp_server.md](./references/node_mcp_server.md) |
-| Creating evaluation questions | [references/evaluation.md](./references/evaluation.md) |
+| Universal guidelines, naming, response formats | [references/mcp_best_practices.md](${CLAUDE_PLUGIN_ROOT}/references/mcp_best_practices.md) |
+| Python/FastMCP implementation | [references/python_mcp_server.md](${CLAUDE_PLUGIN_ROOT}/references/python_mcp_server.md) |
+| Node/TypeScript implementation | [references/node_mcp_server.md](${CLAUDE_PLUGIN_ROOT}/references/node_mcp_server.md) |
+| Creating evaluation questions | [references/evaluation.md](${CLAUDE_PLUGIN_ROOT}/references/evaluation.md) |
 
 ## Agent-Centric Design Principles
 
@@ -55,7 +55,7 @@ Create high-quality MCP servers that enable LLMs to effectively interact with ex
 ### Phase 1: Research and Planning
 
 1. **Study MCP Protocol**: Fetch `https://modelcontextprotocol.io/llms-full.txt`
-2. **Load best practices**: Read [references/mcp_best_practices.md](./references/mcp_best_practices.md)
+2. **Load best practices**: Read [references/mcp_best_practices.md](${CLAUDE_PLUGIN_ROOT}/references/mcp_best_practices.md)
 3. **Study target API**: Read ALL available documentation
 4. **Create implementation plan**: Tool selection, shared utilities, I/O design, error handling
 
@@ -66,8 +66,8 @@ Create high-quality MCP servers that enable LLMs to effectively interact with ex
 3. **Implement tools** - Input schemas (Pydantic/Zod), docstrings, tool logic, annotations
 
 Load language-specific guide:
-- Python: [references/python_mcp_server.md](./references/python_mcp_server.md)
-- TypeScript: [references/node_mcp_server.md](./references/node_mcp_server.md)
+- Python: [references/python_mcp_server.md](${CLAUDE_PLUGIN_ROOT}/references/python_mcp_server.md)
+- TypeScript: [references/node_mcp_server.md](${CLAUDE_PLUGIN_ROOT}/references/node_mcp_server.md)
 
 ### Phase 3: Review and Refine
 
@@ -79,7 +79,7 @@ Load language-specific guide:
 
 Create 10 complex, realistic questions to test MCP server effectiveness.
 
-Load [references/evaluation.md](./references/evaluation.md) for complete guidelines.
+Load [references/evaluation.md](${CLAUDE_PLUGIN_ROOT}/references/evaluation.md) for complete guidelines.
 
 **Question requirements:**
 - Independent, read-only, complex, realistic

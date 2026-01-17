@@ -29,15 +29,15 @@ Context engineering curates the smallest high-signal token set for LLM tasks. Th
 
 | Topic | When to Use | Reference |
 |-------|-------------|-----------|
-| **Fundamentals** | Understanding context anatomy, attention mechanics | [context-fundamentals.md](./references/context-fundamentals.md) |
-| **Degradation** | Debugging failures, lost-in-middle, poisoning | [context-degradation.md](./references/context-degradation.md) |
-| **Optimization** | Compaction, masking, caching, partitioning | [context-optimization.md](./references/context-optimization.md) |
-| **Compression** | Long sessions, summarization strategies | [context-compression.md](./references/context-compression.md) |
-| **Memory** | Cross-session persistence, knowledge graphs | [memory-systems.md](./references/memory-systems.md) |
-| **Multi-Agent** | Coordination patterns, context isolation | [multi-agent-patterns.md](./references/multi-agent-patterns.md) |
-| **Evaluation** | Testing agents, LLM-as-Judge, metrics | [evaluation.md](./references/evaluation.md) |
-| **Tool Design** | Tool consolidation, description engineering | [tool-design.md](./references/tool-design.md) |
-| **Pipelines** | Project development, batch processing | [project-development.md](./references/project-development.md) |
+| **Fundamentals** | Understanding context anatomy, attention mechanics | [context-fundamentals.md](${CLAUDE_PLUGIN_ROOT}/references/context-fundamentals.md) |
+| **Degradation** | Debugging failures, lost-in-middle, poisoning | [context-degradation.md](${CLAUDE_PLUGIN_ROOT}/references/context-degradation.md) |
+| **Optimization** | Compaction, masking, caching, partitioning | [context-optimization.md](${CLAUDE_PLUGIN_ROOT}/references/context-optimization.md) |
+| **Compression** | Long sessions, summarization strategies | [context-compression.md](${CLAUDE_PLUGIN_ROOT}/references/context-compression.md) |
+| **Memory** | Cross-session persistence, knowledge graphs | [memory-systems.md](${CLAUDE_PLUGIN_ROOT}/references/memory-systems.md) |
+| **Multi-Agent** | Coordination patterns, context isolation | [multi-agent-patterns.md](${CLAUDE_PLUGIN_ROOT}/references/multi-agent-patterns.md) |
+| **Evaluation** | Testing agents, LLM-as-Judge, metrics | [evaluation.md](${CLAUDE_PLUGIN_ROOT}/references/evaluation.md) |
+| **Tool Design** | Tool consolidation, description engineering | [tool-design.md](${CLAUDE_PLUGIN_ROOT}/references/tool-design.md) |
+| **Pipelines** | Project development, batch processing | [project-development.md](${CLAUDE_PLUGIN_ROOT}/references/project-development.md) |
 
 ## Key Metrics
 
@@ -75,5 +75,5 @@ Context engineering curates the smallest high-signal token set for LLM tasks. Th
 
 ## Scripts
 
-- [context_analyzer.py](./scripts/context_analyzer.py) - Context health analysis, degradation detection
-- [compression_evaluator.py](./scripts/compression_evaluator.py) - Compression quality evaluation
+- [context_analyzer.py](${CLAUDE_PLUGIN_ROOT}/scripts/context_analyzer.py) - Context health analysis, degradation detection
+- [compression_evaluator.py](${CLAUDE_PLUGIN_ROOT}/scripts/compression_evaluator.py) - Compression quality evaluation

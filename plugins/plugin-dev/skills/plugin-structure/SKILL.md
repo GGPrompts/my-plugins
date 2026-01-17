@@ -5,9 +5,13 @@ description: This skill should be used when the user asks to "create a plugin", 
 
 # Plugin Structure
 
-Claude Code plugins follow standardized directory structures with automatic component discovery.
+Claude Code plugins follow a standardized directory structure with automatic component discovery.
 
 ## Directory Structure
+
+### Standard Plugin Pattern
+
+Every plugin (standalone or in marketplace) uses the same structure:
 
 ```
 plugin-name/
@@ -17,16 +21,41 @@ plugin-name/
 ├── agents/                   # Subagent definitions (.md files)
 ├── skills/                   # Agent skills (subdirectories)
 │   └── skill-name/
-│       └── SKILL.md         # Required for each skill
+│       ├── SKILL.md         # Required for each skill
+│       └── references/      # Detailed docs (loaded on-demand)
 ├── hooks/
 │   └── hooks.json           # Event handler configuration
 ├── .mcp.json                # MCP server definitions
 └── scripts/                 # Helper scripts and utilities
 ```
 
+### Marketplace Structure
+
+A marketplace is a collection of plugins:
+
+```
+my-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json     # Lists all plugins
+└── plugins/
+    ├── plugin-one/
+    │   ├── .claude-plugin/
+    │   │   └── plugin.json  # Each plugin has its own manifest
+    │   └── skills/
+    └── plugin-two/
+        ├── .claude-plugin/
+        │   └── plugin.json
+        └── commands/
+```
+
+**Key points:**
+- `marketplace.json` at marketplace root lists all plugins via `source` paths
+- Each plugin has `.claude-plugin/plugin.json` (consistent, portable pattern)
+- This structure allows plugins to be extracted and used standalone
+
 **Critical rules:**
-- Manifest MUST reside in `.claude-plugin/` directory
-- Component directories MUST be at plugin root, NOT nested inside `.claude-plugin/`
+- Component directories (skills/, commands/, etc.) at plugin root, NOT inside `.claude-plugin/`
+- References inside skills: `skills/<name>/references/` NOT at plugin root
 - Only create directories for components the plugin uses
 - Use kebab-case for all directory and file names
 
@@ -83,7 +112,7 @@ Use `${CLAUDE_PLUGIN_ROOT}` for all intra-plugin paths:
 ## Auto-Discovery
 
 Claude Code automatically loads:
-1. `.claude-plugin/plugin.json` when plugin enables
+1. `.claude-plugin/plugin.json` - Plugin manifest
 2. `commands/*.md` files
 3. `agents/*.md` files
 4. `skills/*/SKILL.md` files
@@ -92,9 +121,11 @@ Claude Code automatically loads:
 
 Components available on next session; no restart required for file changes (but hooks require restart).
 
+**Note:** Explicit arrays for `skills`, `agents`, `commands` in plugin.json are optional. Auto-discovery finds components in standard directories. Use explicit arrays only for custom paths.
+
 ## Common Patterns
 
-**Minimal Plugin:**
+**Minimal Plugin (command-only):**
 ```
 my-plugin/
 ├── .claude-plugin/
@@ -110,7 +141,8 @@ my-plugin/
 │   └── plugin.json
 └── skills/
     ├── skill-one/
-    │   └── SKILL.md
+    │   ├── SKILL.md
+    │   └── references/
     └── skill-two/
         └── SKILL.md
 ```
@@ -123,11 +155,28 @@ my-plugin/
 ├── commands/
 ├── agents/
 ├── skills/
+│   └── my-skill/
+│       ├── SKILL.md
+│       └── references/
 ├── hooks/
-│   ├── hooks.json
-│   └── scripts/
+│   └── hooks.json
 ├── .mcp.json
 └── scripts/
+```
+
+**Marketplace Structure:**
+```
+my-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json
+└── plugins/
+    └── my-plugin/
+        ├── .claude-plugin/
+        │   └── plugin.json
+        └── skills/
+            └── my-skill/
+                ├── SKILL.md
+                └── references/
 ```
 
 ## Troubleshooting

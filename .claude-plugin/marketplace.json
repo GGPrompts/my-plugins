@@ -289,13 +289,6 @@
       "keywords": ["tools", "utility", "specialized", "development"]
     },
     {
-      "name": "tabz",
-      "description": "Browser automation and terminal spawning via TabzChrome - screenshots, clicks, forms, page inspection, network capture, terminal creation",
-      "source": "./plugins/tabz",
-      "category": "terminal",
-      "keywords": ["tabz", "browser", "automation", "screenshot", "click", "terminal", "spawn", "mcp", "chrome"]
-    },
-    {
       "name": "opus-agents",
       "description": "Opus-powered versions of built-in agents for complex implementation work",
       "source": "./plugins/opus-agents",
