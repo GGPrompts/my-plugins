@@ -212,6 +212,13 @@
       "keywords": ["codex", "openai", "cli", "configure", "extend", "guide"]
     },
     {
+      "name": "conductor",
+      "description": "Orchestrate multi-session Claude workflows - spawn workers, subagents, manage beads issues",
+      "source": "./plugins/tools/conductor",
+      "category": "tools",
+      "keywords": ["orchestration", "workers", "beads", "parallel", "swarm", "workflow", "multi-session"]
+    },
+    {
       "name": "xterm-js",
       "description": "xterm.js terminal patterns - React integration, WebSocket, state management",
       "source": "./plugins/terminal/xterm-js",
