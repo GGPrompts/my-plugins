@@ -1,14 +1,21 @@
 {
-  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "conductor",
   "version": "1.0.0",
   "description": "Orchestrate multi-session Claude workflows - spawn workers, use subagents for monitoring, manage beads issues",
-  "author": {
-    "name": "TabzChrome Team"
-  },
-  "license": "MIT",
-  "keywords": ["orchestration", "workers", "beads", "parallel", "swarm"],
-  "commands": "./commands/",
-  "agents": "./agents/",
-  "skills": "./skills/"
+  "skills": [
+    "./skills/automating-browser",
+    "./skills/engineering-prompts",
+    "./skills/using-terminal-tools"
+  ],
+  "agents": [
+    "./agents/code-reviewer.md",
+    "./agents/conductor.md",
+    "./agents/docs-updater.md",
+    "./agents/prompt-enhancer.md",
+    "./agents/silent-failure-hunter.md",
+    "./agents/skill-picker.md",
+    "./agents/tabz-artist.md",
+    "./agents/tabz-manager.md",
+    "./agents/tui-expert.md"
+  ]
 }
