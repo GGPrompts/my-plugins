@@ -44,7 +44,7 @@ bd sync                      # End of session
 
 ```bash
 # Check worker status
-./scripts/monitor-workers.sh --summary
+${CLAUDE_PLUGIN_ROOT}/scripts/monitor-workers.sh --summary
 ```
 
 ## Cleanup
