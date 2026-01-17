@@ -1,5 +1,6 @@
 {
   "name": "skill-creator",
   "version": "1.0.0",
-  "description": "Create effective Claude Code skills with proper structure and patterns"
+  "description": "Create effective Claude Code skills with proper structure and patterns",
+  "agents": ["./agents/skill-reviewer.md"]
 }

@@ -7,5 +7,6 @@
     "url": "https://github.com/anthropics/claude-code"
   },
   "license": "MIT",
-  "keywords": ["plugin", "development", "commands", "agents", "skills", "hooks", "mcp"]
+  "keywords": ["plugin", "development", "commands", "agents", "skills", "hooks", "mcp"],
+  "agents": ["./agents/plugin-validator.md"]
 }
