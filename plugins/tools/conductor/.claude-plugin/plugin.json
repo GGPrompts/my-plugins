@@ -1,21 +1,8 @@
 {
   "name": "conductor",
-  "version": "1.0.0",
-  "description": "Orchestrate multi-session Claude workflows - spawn workers, use subagents for monitoring, manage beads issues",
+  "version": "2.0.0",
+  "description": "AI backlog grooming + TabzChrome terminal spawning for parallel beads workflows",
   "skills": [
-    "./skills/automating-browser",
-    "./skills/engineering-prompts",
-    "./skills/using-terminal-tools"
-  ],
-  "agents": [
-    "./agents/code-reviewer.md",
-    "./agents/conductor.md",
-    "./agents/docs-updater.md",
-    "./agents/prompt-enhancer.md",
-    "./agents/silent-failure-hunter.md",
-    "./agents/skill-picker.md",
-    "./agents/tabz-artist.md",
-    "./agents/tabz-manager.md",
-    "./agents/tui-expert.md"
+    "./skills/automating-browser"
   ]
 }

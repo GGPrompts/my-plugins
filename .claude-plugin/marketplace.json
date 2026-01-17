@@ -213,10 +213,10 @@
     },
     {
       "name": "conductor",
-      "description": "Orchestrate multi-session Claude workflows - spawn workers, subagents, manage beads issues",
+      "description": "AI backlog grooming + TabzChrome terminal spawning for parallel beads workflows",
       "source": "./plugins/tools/conductor",
       "category": "tools",
-      "keywords": ["orchestration", "workers", "beads", "parallel", "swarm", "workflow", "multi-session"]
+      "keywords": ["orchestration", "beads", "planning", "tabzchrome", "spawn", "parallel"]
     },
     {
       "name": "xterm-js",

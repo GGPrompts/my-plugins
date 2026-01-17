@@ -1,177 +1,139 @@
 ---
-description: "Groom and organize beads issues into parallelizable waves for efficient multi-worker execution"
+description: "AI-assisted backlog grooming using all beads features"
 ---
 
-# Plan Backlog - Sprint Planning for Parallel Work
+# Plan Backlog - AI Scrum Master
 
-Analyze, organize, and prioritize beads issues to enable efficient parallel execution with multiple Claude workers.
+You are a beads expert helping groom and organize the backlog. Use ALL of beads' features to transform rough notes into a well-organized, parallelizable backlog.
 
-## Quick Start
+## Your Role
 
-```bash
-/conductor:plan-backlog
-```
+The user adds rough issues to beads. You analyze and organize them:
+- Set appropriate priorities
+- Add dependencies and blockers
+- Group related work
+- Break down epics into subtasks
+- Create reusable protos for patterns
+- Organize into parallelizable waves
 
-## Workflow Overview
+## Workflow
 
-| Phase | Purpose | Reference |
-|-------|---------|-----------|
-| 1. Analyze | Understand current state | `references/plan-backlog/analysis-phases.md` |
-| 2. Parallelize | Find concurrent opportunities | `references/plan-backlog/analysis-phases.md` |
-| 3. Break Down | Decompose epics | `references/plan-backlog/breakdown-prioritize.md` |
-| 4. Prioritize | Optimize order | `references/plan-backlog/breakdown-prioritize.md` |
-| 5. Plan | Generate sprint waves | `references/plan-backlog/sprint-planning.md` |
-| 6. AI Analysis | Optional Codex insights | `references/plan-backlog/sprint-planning.md` |
-
----
-
-## Quick Analysis
+### 1. Analyze Current State
 
 ```bash
-# Current state
-bd stats
-bd ready
-bd blocked
-
-# Count by status
-echo "Open: $(bd list --status=open --json | jq 'length')"
-echo "Ready: $(bd ready --json | jq 'length')"
-echo "Blocked: $(bd blocked --json | jq 'length')"
-
-# High-impact blockers (prioritize these)
-bd list --all --json | jq -r '.[] | select(.blocks | length > 0) | "\(.id): blocks \(.blocks | length)"'
-
-# Epic analysis - list children of an epic
-bd list --filter-parent <epic-id>        # All issues under epic
-bd ready --filter-parent <epic-id>       # Ready issues in epic
-bd blocked --filter-parent <epic-id>     # Blocked issues in epic
+bd stats                     # Overview
+bd ready --json              # What's unblocked
+bd blocked --json            # What's stuck
+bd list --status open --json # All open work
 ```
 
----
+### 2. Review and Prioritize
 
-## Parallelization Quick Check
+For each issue, consider:
+- Is it blocking other work? → Raise priority
+- Is it a quick win? → Raise priority
+- Does it have dependencies? → Add them with `bd dep add`
+- What labels apply? → Add them with `bd label add`
 
 ```bash
-# Independent issues - can run in parallel NOW
-bd ready --json | jq -r '.[] | "\(.id): [\(.priority)] \(.title)"'
+# Set priority (0=critical, 1=high, 2=medium, 3=low, 4=backlog)
+bd update ID --priority 1 --json
+
+# Add dependencies (blocker blocks blocked)
+bd dep add BLOCKED-ID BLOCKER-ID --json
+
+# Add labels for grouping
+bd label add ID frontend,auth --json
 ```
 
-**Group by area:**
-| Area | Indicators |
-|------|------------|
-| Frontend | UI, component, modal, style |
-| Backend | API, server, endpoint |
-| Terminal | xterm, pty, tmux |
-| MCP | tool, mcp, browser |
+### 3. Break Down Large Work
 
----
+Epics should be decomposed into smaller tasks:
 
-## Generate Sprint Plan
-
-### 1. Determine Workers
-
-Ask: How many parallel workers? (2-5, recommend 3)
-
-### 2. Build Waves
-
-- **Wave 1:** All `bd ready` issues (no blockers)
-- **Wave 2:** Issues unblocked after Wave 1
-- **Wave 3:** Issues unblocked after Wave 2
-
-**Per-epic wave planning:**
 ```bash
-# Plan waves for a specific epic
-bd ready --filter-parent <epic-id>        # Wave 1 for this epic
-bd blocked --filter-parent <epic-id>      # Future waves (resolve deps first)
+# Create epic
+bd create "Auth System" --type epic --priority 1 --json
 
-# Example: Focus a swarm on one epic
-bd ready --filter-parent TabzChrome-xyz --json | jq -r '.[].id' | xargs /conductor:bd-swarm
+# Add subtasks (auto-numbered as children)
+bd create "Design auth flow" --type task --json
+bd create "Implement login" --type task --json
+bd create "Add tests" --type task --json
+
+# Wire dependencies
+bd dep add IMPL-ID DESIGN-ID --json
+bd dep add TESTS-ID IMPL-ID --json
 ```
 
-### 3. Output Format
+### 4. Create Protos for Patterns
+
+If you see repeating patterns, create reusable protos:
+
+```bash
+# Create a template epic
+bd create "Code Review: {{feature}}" --type epic --label template --json
+bd create "Review implementation" --type task --json
+bd create "Check test coverage" --type task --json
+bd create "Verify docs updated" --type task --json
+
+# Later, spawn instances
+bd mol pour mol-code-review --var feature="auth"
+```
+
+### 5. Organize Into Waves
+
+Group ready issues for parallel execution:
+
+```bash
+# Wave 1 = all currently ready (no blockers)
+bd ready --json
+
+# After Wave 1 completes, new work becomes ready
+# Check with bd ready again
+```
+
+### 6. Output Sprint Plan
+
+Present the organized backlog:
 
 ```markdown
-## Wave 1 (Start Now)
-| Issue | Type | Priority | Description |
-|-------|------|----------|-------------|
-| xxx | feature | P1 | Add loading state to dashboard |
-| yyy | bug | P2 | Fix terminal resize corruption |
+## Wave 1 (Ready Now)
+| Issue | Priority | Type | Description |
+|-------|----------|------|-------------|
+| bd-xxx | P1 | bug | Fix login redirect |
+| bd-yyy | P2 | feature | Add dark mode toggle |
 
-**Next steps:**
-Spawn workers: `/conductor:bd-swarm xxx yyy`
+## Wave 2 (After Wave 1)
+| Issue | Blocked By | Description |
+|-------|------------|-------------|
+| bd-zzz | bd-xxx | Refactor auth flow |
+
+## Protos Available
+- `mol-code-review` - Standard review checklist
+- `mol-feature` - Feature development workflow
 ```
 
-> **Skills auto-activate** via UserPromptSubmit hook based on task description.
-> No need to persist or specify skills - workers load relevant skills automatically.
+## Beads Commands Reference
 
----
+| Command | Purpose |
+|---------|---------|
+| `bd ready` | Find unblocked work |
+| `bd blocked` | See what's stuck and why |
+| `bd update ID --priority N` | Set priority (0-4) |
+| `bd dep add A B` | A is blocked by B |
+| `bd label add ID label` | Add label |
+| `bd create --type epic` | Create epic |
+| `bd mol pour PROTO` | Spawn workflow from template |
+| `bd mol distill EPIC` | Extract template from ad-hoc work |
 
-## Epic Breakdown (Interactive)
+## Decision Guidance
 
-```bash
-# Find epics
-bd list --all --json | jq -r '.[] | select(.type == "epic") | .id'
-
-# Analyze epic children (use --filter-parent)
-bd list --filter-parent <epic-id>         # All children of epic
-bd ready --filter-parent <epic-id>        # Ready children (can start now)
-bd blocked --filter-parent <epic-id>      # Blocked children (need deps resolved)
-
-# Count children by status
-echo "Total: $(bd list --filter-parent <epic-id> --json | jq 'length')"
-echo "Ready: $(bd ready --filter-parent <epic-id> --json | jq 'length')"
-
-# Create subtasks with deps
-bd create --title="Design API" --type=task --priority=2
-bd create --title="Implement backend" --type=task --priority=2
-bd dep add impl-id design-id
-```
-
----
-
-## Priority Adjustments
-
-| Criterion | Action |
+| Situation | Action |
 |-----------|--------|
-| Blocks 3+ issues | Raise to P1 |
-| Quick win | Raise to P2 |
-| No dependents | Lower to P3 |
-| User-facing bug | Raise to P1 |
+| Blocks 3+ issues | Priority 0-1 |
+| Quick win (<1hr) | Priority 1-2 |
+| User-facing bug | Priority 0-1 |
+| Nice-to-have | Priority 3-4 |
+| Repeating pattern | Create proto |
+| Large feature | Break into epic + subtasks |
 
-```bash
-bd update <id> --priority 1
-```
-
----
-
-## AI-Assisted (Optional)
-
-For large backlogs (10+ issues), use Codex for analysis:
-
-```bash
-# Analyze dependency graph
-mcp-cli call codex/codex "$(bd list --all --json | jq -Rs '{prompt: "Analyze for parallelization: " + .}')"
-```
-
-See: `references/plan-backlog/sprint-planning.md` for full Codex prompts.
-
----
-
-## Reference Files
-
-| File | Content |
-|------|---------|
-| `analysis-phases.md` | Phase 1-2: State analysis, parallelization |
-| `breakdown-prioritize.md` | Phase 3-4: Epic breakdown, priority tuning |
-| `sprint-planning.md` | Phase 5-6: Wave generation, AI analysis |
-
----
-
-## Notes
-
-- Re-run after each wave completes to re-plan
-- Use `bd comments <id> add "Progress: ..."` for status tracking
-- Consider `/wipe` between major planning sessions
-- For complex epics, use `ultrathink` prefix before breakdown
-
-Execute this workflow now.
+Start by running `bd stats` and `bd ready --json` to understand the current state.
