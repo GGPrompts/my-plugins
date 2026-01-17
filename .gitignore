@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 node_modules/
 .claude/*.local.md
+scripts/audit-logs/
