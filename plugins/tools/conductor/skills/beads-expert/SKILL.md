@@ -1,6 +1,7 @@
 ---
 name: beads-expert
 description: "Brainstorm ideas and design workflows with a beads expert. Use when: 'help me plan', 'how should I structure this', 'what beads features', 'brainstorm', 'before I create tasks', 'design my workflow'. For ideation BEFORE creating issues."
+user-invocable: true
 ---
 
 # Beads Expert - Brainstorming Partner
