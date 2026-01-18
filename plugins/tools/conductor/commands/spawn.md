@@ -120,7 +120,7 @@ PROMPT=$(bd show ISSUE-ID --json | jq -r '.[0].notes')
 tmux send-keys -t "$SESSION" -l "$PROMPT"
 
 # CRITICAL: 0.3s delay prevents submit before prompt loads
-sleep 0.3
+sleep 0.5
 
 # Submit
 tmux send-keys -t "$SESSION" C-m
@@ -140,7 +140,7 @@ If special characters cause issues (rare), use load-buffer:
 echo "$PROMPT" > /tmp/prompt-$$.txt
 tmux load-buffer /tmp/prompt-$$.txt
 tmux paste-buffer -t "$SESSION"
-sleep 0.3
+sleep 0.5
 tmux send-keys -t "$SESSION" C-m
 rm /tmp/prompt-$$.txt
 ```
@@ -149,7 +149,7 @@ rm /tmp/prompt-$$.txt
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
-| Prompt doesn't submit | Missing delay | Add `sleep 0.3` before `C-m` |
+| Prompt doesn't submit | Missing delay | Add `sleep 0.5` before `C-m` |
 | Partial prompt sent | Long prompt | Increase delay to 0.5s |
 | Worker sits idle | Prompt not received | Verify with `tmux capture-pane` |
 
@@ -181,7 +181,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/monitor-workers.sh --check-issue ISSUE-ID
 ```bash
 # If worker finished but didn't close issue
 tmux send-keys -t "$SESSION" -l "Close the issue: bd close ISSUE-ID --reason done"
-sleep 0.3
+sleep 0.5
 tmux send-keys -t "$SESSION" C-m
 ```
 

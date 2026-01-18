@@ -68,7 +68,7 @@ spawn_worker() {
   # Send prompt (literal mode preserves formatting)
   sleep 2
   tmux send-keys -t "$SESSION" -l "$PROMPT"
-  sleep 0.3
+  sleep 0.5
   tmux send-keys -t "$SESSION" C-m
 
   # Track it
