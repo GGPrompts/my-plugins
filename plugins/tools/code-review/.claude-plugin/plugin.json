@@ -1,8 +1,5 @@
 {
   "name": "code-review",
-  "version": "2.1.1",
-  "description": "Automated code review for beads issues with confidence-based scoring and parallel specialized agents",
-  "skills": [
-    "./skills/code-review"
-  ]
+  "version": "2.1.2",
+  "description": "Automated code review for beads issues with confidence-based scoring and parallel specialized agents"
 }
