@@ -108,7 +108,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "terminal resize bug"
 
 #### Craft the Prompt
 
-Use natural language to guide workers to use skills:
+Use natural language to guide workers to use skills and subagents:
 
 ```markdown
 Fix beads issue ISSUE-ID: "Title"
@@ -127,6 +127,23 @@ When done, use the code-review skill before committing.
 ## When Done
 bd close ISSUE-ID --reason "done"
 ```
+
+#### Encourage Parallelization
+
+For tasks with multiple independent parts, hint at subagent usage:
+
+```markdown
+## Approach
+Use subagents in parallel to scaffold the Dashboard, Settings, and Profile pages.
+Then integrate them with the router.
+```
+
+Good parallelization hints:
+- "Use subagents in parallel to create X, Y, and Z"
+- "Research these files simultaneously using subagents"
+- "Scaffold all components in parallel, then wire them up"
+
+Keep it natural - workers know how to use subagents, they just need the nudge.
 
 #### Store in Issue Notes
 

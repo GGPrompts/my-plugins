@@ -67,8 +67,45 @@ done
 bd sync
 ```
 
+## Worker Retro (Optional)
+
+Before cleanup, capture worker feedback on the closed issue:
+
+```bash
+bd update ISSUE-ID --notes "$(cat <<'EOF'
+## Worker Retro
+- What was unclear: [e.g., "Prompt didn't mention auth middleware dependency"]
+- Missing context: [e.g., "Had to discover useTerminalSessions.ts - add to key files"]
+- Discovered work: [e.g., "Found tech debt in X, created follow-up issue"]
+- What would help: [e.g., "Link to relevant tests"]
+EOF
+)"
+```
+
+### Retro Questions
+
+| Question | Why It Helps |
+|----------|--------------|
+| What was unclear in the prompt? | Improve prompt templates |
+| What context did you wish you had? | Better key files lists |
+| What did you have to search for? | Add to CLAUDE.md |
+| Did you discover unrelated work? | Validate issue scoping |
+| What would've made this 2x faster? | Process improvements |
+
+### Mining Retros
+
+Review past issues to find patterns:
+
+```bash
+# Get retros from closed issues
+bd list --status closed --json | jq -r '.[] | select(.notes | contains("Retro")) | "\(.id): \(.notes)"'
+```
+
+Patterns → improve PRIME.md, CLAUDE.md, prompt templates.
+
 ## Notes
 
 - Always verify issue is closed before cleanup
 - Merge conflicts require manual resolution
 - Use `bd sync` at the end to persist all changes
+- Worker retros are optional but valuable for prompt improvement
