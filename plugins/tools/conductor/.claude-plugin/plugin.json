@@ -1,6 +1,6 @@
 {
   "name": "conductor",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Spawn and monitor Claude workers via TabzChrome, with beads-native issue tracking and browser debugging",
   "skills": [
     "./skills/automating-browser",
