@@ -1,11 +1,11 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "my-plugins",
-  "version": "1.0.0",
-  "description": "Personal Claude Code plugins - organized by domain with subagent bundles",
   "owner": {
-    "name": "GGPrompts",
-    "url": "https://github.com/GGPrompts/my-plugins"
+    "name": "GGPrompts"
+  },
+  "metadata": {
+    "description": "Personal Claude Code plugins - organized by domain with subagent bundles",
+    "version": "1.0.0"
   },
   "plugins": [
     {
@@ -108,7 +108,7 @@
     },
     {
       "name": "plugin-dev",
-      "description": "Claude Code plugin development toolkit - 8 specialized skills for plugins, commands, agents, skills, hooks, MCP, marketplaces, and settings",
+      "description": "Claude Code plugin development toolkit - skills for plugins, commands, agents, hooks, MCP, marketplaces",
       "source": "./plugins/plugin-dev",
       "category": "meta",
       "keywords": ["plugin", "manifest", "marketplace", "debug", "structure", "claude", "code", "development"]
@@ -192,10 +192,10 @@
     },
     {
       "name": "code-review",
-      "description": "Code review practices, automated review with confidence scoring, security scanning, and silent failure detection",
+      "description": "Automated code review with confidence scoring, security scanning, and silent failure detection",
       "source": "./plugins/tools/code-review",
       "category": "tools",
-      "keywords": ["review", "code", "feedback", "verify", "quality", "pr", "pull-request", "security", "silent-failures", "automated"]
+      "keywords": ["review", "code", "feedback", "verify", "quality", "security", "automated"]
     },
     {
       "name": "repomix",
@@ -216,7 +216,7 @@
       "description": "AI backlog grooming + TabzChrome terminal spawning for parallel beads workflows",
       "source": "./plugins/tools/conductor",
       "category": "tools",
-      "keywords": ["orchestration", "beads", "planning", "tabzchrome", "spawn", "parallel"]
+      "keywords": ["orchestration", "beads", "planning", "tabzchrome", "spawn", "parallel", "brainstorm"]
     },
     {
       "name": "xterm-js",
@@ -248,10 +248,10 @@
     },
     {
       "name": "restart",
-      "description": "Exit and restart Claude Code with plugins reloaded",
+      "description": "Reload plugins and hooks by restarting Claude Code",
       "source": "./plugins/terminal/restart",
       "category": "terminal",
-      "keywords": ["restart", "reload", "plugin", "exit", "refresh"]
+      "keywords": ["restart", "reload", "plugin", "refresh"]
     },
     {
       "name": "handoff",
