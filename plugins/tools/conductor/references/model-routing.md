@@ -6,7 +6,7 @@ With multiple token sources, route tasks to the most efficient model.
 
 | Source | Model | Best For |
 |--------|-------|----------|
-| Claude Max | Opus | Brainstorming (beads-expert), complex implementation, architecture |
+| Claude Max | Opus | Brainstorming (brainstorm), complex implementation, architecture |
 | Claude Max | Sonnet | General coding, reviews |
 | Claude Max | Haiku | Quick exploration, simple tasks |
 | Codex | codex | Code review, second opinion, bulk review |
@@ -44,7 +44,7 @@ Popular local models for coding:
 
 | Task Type | Recommended Model |
 |-----------|------------------|
-| Brainstorming/ideation | Opus (beads-expert agent) |
+| Brainstorming/ideation | Opus (brainstorm agent) |
 | Quick exploration | Haiku |
 | Code implementation | Sonnet or Opus |
 | Code review | Codex (bulk) or Opus (thorough) |
@@ -60,6 +60,6 @@ Popular local models for coding:
 curl -X POST http://localhost:8129/api/spawn \
   -d '{"command": "claude --model haiku --dangerously-skip-permissions"}'
 
-# Use beads-expert agent for brainstorming
-claude --agent conductor:beads-expert
+# Use brainstorm agent for brainstorming
+claude --agent conductor:brainstorm
 ```

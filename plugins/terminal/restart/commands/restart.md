@@ -1,5 +1,5 @@
 ---
-description: Restart Claude Code with plugins reloaded
+description: Reload plugins and hooks
 ---
 
 Restart Claude Code to reload plugins, hooks, and MCP servers.
@@ -19,7 +19,7 @@ if [ -n "$TMUX_PANE" ]; then
         sleep 1
         tmux send-keys -t "$TMUX_PANE" '/'
         sleep 0.5
-        tmux send-keys -t "$TMUX_PANE" -l 'exit'
+        tmux send-keys -t "$TMUX_PANE" -l 'quit'
         sleep 0.3
         tmux send-keys -t "$TMUX_PANE" C-m
         sleep 4

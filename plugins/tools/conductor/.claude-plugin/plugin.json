@@ -4,6 +4,6 @@
   "description": "Spawn and monitor Claude workers via TabzChrome, with beads-native issue tracking and browser debugging",
   "skills": [
     "./skills/automating-browser",
-    "./skills/beads-expert"
+    "./skills/brainstorm"
   ]
 }
