@@ -1,5 +1,5 @@
 ---
-description: Exit and restart Claude Code with plugins reloaded
+description: Restart Claude Code with plugins reloaded
 ---
 
 Restart Claude Code to reload plugins, hooks, and MCP servers.
