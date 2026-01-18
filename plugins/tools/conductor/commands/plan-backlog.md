@@ -85,11 +85,41 @@ mcp__beads__dep(issue_id="IMPL-ID", depends_on_id="DESIGN-ID")
 mcp__beads__dep(issue_id="TESTS-ID", depends_on_id="IMPL-ID")
 ```
 
-### 4. Prepare Issue Notes
+### 4. Auto-Detect Skills
+
+Use `match-skills.sh` to automatically detect relevant skills based on issue content:
+
+```bash
+# Get skill suggestions for an issue
+SCRIPT="$HOME/.claude/plugins/cache/my-plugins/conductor/*/scripts/match-skills.sh"
+SKILLS=$($SCRIPT --triggers "$(bd show ISSUE-ID --json | jq -r '.[0].title + " " + .[0].description')")
+
+# Example output: "Use the xterm-js skill for terminal integration and resize handling."
+```
+
+Or match from issue ID directly:
+```bash
+$SCRIPT --issue ISSUE-ID
+```
+
+**Available options:**
+- `--triggers "text"` - Get natural language skill suggestions
+- `--issue ID` - Match from beads issue content
+- `--json "text"` - Get structured JSON output
+- `--available-full` - List all available skills with descriptions
+
+### 5. Prepare Issue Notes
 
 The conductor sends the same standard prompt to every worker. All context goes in the issue notes/design/acceptance fields.
 
 #### Update Issue with Context
+
+First get skill suggestions, then update the issue:
+
+```bash
+# Get skill hints
+SKILLS=$($SCRIPT --triggers "$(bd show ISSUE-ID --json | jq -r '.[0].title')")
+```
 
 **Using MCP:**
 ```python
@@ -99,7 +129,7 @@ mcp__beads__update(
 Brief description of what needs fixing.
 
 ## Approach
-Use the ui-styling skill for CSS audit.
+{SKILLS}  # e.g., "Use the xterm-js skill for terminal integration."
 
 ## Key Files
 - path/to/file.ts
@@ -119,7 +149,7 @@ bd update ISSUE-ID --notes "## Problem
 Brief description...
 
 ## Approach
-Use the ui-styling skill...
+$SKILLS
 
 ## Key Files
 - path/to/file.ts"
@@ -143,7 +173,7 @@ For multi-part tasks, add to notes:
 Use subagents in parallel to scaffold Dashboard, Settings, and Profile pages.
 ```
 
-### 5. Organize Into Waves
+### 6. Organize Into Waves
 
 Group ready issues for parallel execution:
 
@@ -156,7 +186,7 @@ mcp__beads__ready()
 # Check with mcp__beads__ready() again
 ```
 
-### 6. Output Sprint Plan
+### 7. Output Sprint Plan
 
 Present the organized backlog:
 
