@@ -8,152 +8,185 @@ Spawns workers for ready issues, polls beads for updates, spawns new workers as 
 
 ## How It Works
 
-1. Start beads daemon
-2. Get ready issues → spawn workers (up to N parallel)
-3. Wait 2 minutes (workers need time to start)
-4. Poll every 30 seconds:
-   - New issues unblocked? → Spawn workers
-   - Issues closed? → Cleanup worktrees
-   - All done? → Exit
+1. Check TabzChrome health
+2. Start beads daemon
+3. Launch worker dashboard (tmuxplexer --watcher)
+4. Get ready tasks (filter out epics) → spawn workers (up to 3 parallel)
+5. Poll every 30 seconds:
+   - Query `/api/agents` for worker status
+   - Check beads for closed issues
+   - Merge + cleanup completed workers
+   - Spawn newly unblocked issues
+6. When done: `bd sync && git push`
 
 ## Usage
 
 ```bash
-# Run auto mode (max 3 parallel workers)
 /conductor:auto
 ```
 
-**Max 3 workers** - more gets chaotic, especially since workers can spawn their own subagents.
+**Max 3 workers** - workers spawn subagents, more causes resource contention.
 
 ## Implementation
 
 ```bash
 #!/bin/bash
-MAX_WORKERS=3  # Hard limit - workers spawn subagents, more than 3 gets chaotic
+MAX_WORKERS=3
 POLL_INTERVAL=30
 INITIAL_WAIT=120
+TABZ_API="http://localhost:8129"
+TOKEN=$(cat /tmp/tabz-auth-token)
 
-# Start daemon
-bd daemon status || bd daemon start
+# Pre-flight checks
+check_health() {
+  curl -sf "$TABZ_API/api/health" >/dev/null || { echo "TabzChrome not running"; exit 1; }
+  bd daemon status >/dev/null 2>&1 || bd daemon start
+}
 
-# Track active workers: worktree_path -> issue_id
-declare -A ACTIVE_WORKERS
-
-spawn_worker() {
-  local ISSUE_ID="$1"
-  local WORKTREE=".worktrees/$ISSUE_ID"
-
-  # Create worktree
-  bd worktree create "$WORKTREE" --branch "feature/$ISSUE_ID"
-
-  # Initialize dependencies (prevents workers from wasting time on npm install)
-  ${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh "$WORKTREE" --quiet
-
-  # Standard prompt - issue notes have the context
-  local PROMPT="Complete beads issue $ISSUE_ID. Read the issue notes for context. Use subagents in parallel when possible. Load any skills mentioned in the notes."
-
-  # Spawn terminal
-  local TOKEN=$(cat /tmp/tabz-auth-token)
-  local RESPONSE=$(curl -s -X POST http://localhost:8129/api/spawn \
+# Launch tmuxplexer dashboard
+spawn_dashboard() {
+  curl -s -X POST "$TABZ_API/api/spawn" \
     -H "Content-Type: application/json" \
     -H "X-Auth-Token: $TOKEN" \
     -d '{
-      "name": "Claude: '"$ISSUE_ID"'",
-      "workingDir": "'"$(pwd)/$WORKTREE"'",
-      "command": "claude --dangerously-skip-permissions"
-    }')
-
-  local SESSION=$(echo "$RESPONSE" | jq -r '.sessionName')
-
-  # Send prompt (literal mode preserves formatting)
-  sleep 2
-  tmux send-keys -t "$SESSION" -l "$PROMPT"
-  sleep 0.5
-  tmux send-keys -t "$SESSION" C-m
-
-  # Track it
-  ACTIVE_WORKERS["$WORKTREE"]="$ISSUE_ID"
-
-  echo "Spawned worker for $ISSUE_ID in $SESSION"
+      "name": "Worker Dashboard",
+      "workingDir": "/home/marci/projects/tmuxplexer",
+      "command": "./tmuxplexer --watcher"
+    }' >/dev/null
+  echo "Dashboard launched"
 }
 
+# Get ready tasks (exclude epics)
+get_ready_tasks() {
+  bd ready --json | jq -r '.[] | select(.issue_type != "epic") | .id'
+}
+
+# Check if issue is already being worked (by terminal name)
+is_issue_active() {
+  local ISSUE_ID="$1"
+  curl -s "$TABZ_API/api/agents" | jq -e --arg id "$ISSUE_ID" \
+    '.data[] | select(.name == $id)' >/dev/null 2>&1
+}
+
+# Spawn a worker
+spawn_worker() {
+  local ISSUE_ID="$1"
+  local WORKTREE=".worktrees/$ISSUE_ID"
+  local WORKDIR=$(pwd)
+
+  # Create worktree
+  git worktree add "$WORKTREE" -b "feature/$ISSUE_ID" 2>/dev/null || return 1
+
+  # Initialize dependencies
+  INIT_SCRIPT=$(find ~/.claude/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
+  [ -n "$INIT_SCRIPT" ] && $INIT_SCRIPT "$WORKTREE" --quiet 2>/dev/null
+
+  # Spawn terminal with issue ID as name
+  local RESP=$(curl -s -X POST "$TABZ_API/api/spawn" \
+    -H "Content-Type: application/json" \
+    -H "X-Auth-Token: $TOKEN" \
+    -d "{
+      \"name\": \"$ISSUE_ID\",
+      \"workingDir\": \"$WORKDIR/$WORKTREE\",
+      \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions\"
+    }")
+
+  local SESSION=$(echo "$RESP" | jq -r '.terminal.sessionName')
+
+  # Send minimal prompt
+  sleep 2
+  local PROMPT="Complete beads issue $ISSUE_ID. Run bd show $ISSUE_ID for context."
+  tmux send-keys -t "$SESSION" -l "$PROMPT"
+  sleep 0.5
+  tmux send-keys -t "$SESSION" Enter
+
+  echo "Spawned $ISSUE_ID → $SESSION"
+}
+
+# Get active workers from TabzChrome API
+get_active_workers() {
+  curl -s "$TABZ_API/api/agents" | jq -r '
+    .data[]
+    | select(.workingDir | contains(".worktrees/"))
+    | .name
+  '
+}
+
+# Cleanup a completed worker
 cleanup_worker() {
-  local WORKTREE="$1"
-  local ISSUE_ID="${ACTIVE_WORKERS[$WORKTREE]}"
+  local ISSUE_ID="$1"
+
+  # Get session ID by name
+  local SESSION=$(curl -s "$TABZ_API/api/agents" | jq -r --arg id "$ISSUE_ID" \
+    '.data[] | select(.name == $id) | .id')
+
+  # Kill terminal via API
+  [ -n "$SESSION" ] && curl -s -X DELETE "$TABZ_API/api/agents/$SESSION" \
+    -H "X-Auth-Token: $TOKEN" >/dev/null
 
   # Merge changes
-  git checkout main
   git merge "feature/$ISSUE_ID" --no-edit 2>/dev/null || true
 
   # Remove worktree
-  bd worktree remove "$WORKTREE" 2>/dev/null || true
+  git worktree remove ".worktrees/$ISSUE_ID" --force 2>/dev/null || true
   git branch -d "feature/$ISSUE_ID" 2>/dev/null || true
-
-  # Untrack
-  unset ACTIVE_WORKERS["$WORKTREE"]
 
   echo "Cleaned up $ISSUE_ID"
 }
 
-# Initial spawn
-echo "Getting ready issues..."
-READY=$(bd ready --json | jq -r '.[].id' | head -n "$MAX_WORKERS")
+# Main
+check_health
+spawn_dashboard
+
+echo "Getting ready tasks..."
+READY=$(get_ready_tasks | head -n $MAX_WORKERS)
+
 for ISSUE_ID in $READY; do
   spawn_worker "$ISSUE_ID"
 done
 
-if [ ${#ACTIVE_WORKERS[@]} -eq 0 ]; then
-  echo "No ready issues. Exiting."
+ACTIVE_COUNT=$(get_active_workers | wc -l)
+if [ "$ACTIVE_COUNT" -eq 0 ]; then
+  echo "No ready tasks. Exiting."
   exit 0
 fi
 
-# Wait for workers to start
 echo "Waiting ${INITIAL_WAIT}s for workers to initialize..."
 sleep "$INITIAL_WAIT"
 
 # Poll loop
 while true; do
-  echo "Polling... (${#ACTIVE_WORKERS[@]} active workers)"
+  WORKERS=$(get_active_workers)
+  ACTIVE_COUNT=$(echo "$WORKERS" | grep -c . || echo 0)
+  echo "Polling... ($ACTIVE_COUNT active workers)"
 
   # Check for completed issues
-  for WORKTREE in "${!ACTIVE_WORKERS[@]}"; do
-    ISSUE_ID="${ACTIVE_WORKERS[$WORKTREE]}"
+  for ISSUE_ID in $WORKERS; do
     STATUS=$(bd show "$ISSUE_ID" --json 2>/dev/null | jq -r '.[0].status // "unknown"')
-
     if [ "$STATUS" = "closed" ]; then
       echo "Issue $ISSUE_ID completed!"
-      cleanup_worker "$WORKTREE"
+      cleanup_worker "$ISSUE_ID"
     fi
   done
 
-  # Check for new ready issues (if we have capacity)
-  CURRENT_COUNT=${#ACTIVE_WORKERS[@]}
-  if [ "$CURRENT_COUNT" -lt "$MAX_WORKERS" ]; then
-    SLOTS=$((MAX_WORKERS - CURRENT_COUNT))
+  # Spawn new workers if capacity available
+  ACTIVE_COUNT=$(get_active_workers | grep -c . || echo 0)
+  if [ "$ACTIVE_COUNT" -lt "$MAX_WORKERS" ]; then
+    SLOTS=$((MAX_WORKERS - ACTIVE_COUNT))
 
-    # Get ready issues not already being worked
-    NEW_READY=$(bd ready --json | jq -r '.[].id' | while read ID; do
-      # Check if already active
-      FOUND=0
-      for ACTIVE_ID in "${ACTIVE_WORKERS[@]}"; do
-        [ "$ACTIVE_ID" = "$ID" ] && FOUND=1
-      done
-      [ "$FOUND" -eq 0 ] && echo "$ID"
-    done | head -n "$SLOTS")
-
-    for ISSUE_ID in $NEW_READY; do
-      spawn_worker "$ISSUE_ID"
+    for ISSUE_ID in $(get_ready_tasks | head -n $SLOTS); do
+      is_issue_active "$ISSUE_ID" || spawn_worker "$ISSUE_ID"
     done
   fi
 
-  # Exit if no active workers and no ready issues
-  if [ ${#ACTIVE_WORKERS[@]} -eq 0 ]; then
-    REMAINING=$(bd ready --json | jq -r '.[].id' | wc -l)
-    if [ "$REMAINING" -eq 0 ]; then
-      echo "All work complete!"
-      bd sync
-      exit 0
-    fi
+  # Exit if done
+  ACTIVE_COUNT=$(get_active_workers | grep -c . || echo 0)
+  REMAINING=$(get_ready_tasks | wc -l)
+  if [ "$ACTIVE_COUNT" -eq 0 ] && [ "$REMAINING" -eq 0 ]; then
+    echo "All work complete!"
+    bd sync
+    git push
+    exit 0
   fi
 
   sleep "$POLL_INTERVAL"
@@ -162,28 +195,66 @@ done
 
 ## What Workers Should Do
 
-Workers follow the standard PRIME.md workflow:
+Workers follow the standard beads workflow:
 
-1. `bd update ID --status in_progress`
-2. Do the work
-3. `bd close ID --reason "done"`
-4. `bd sync`
+1. `bd show ISSUE_ID` - Read context
+2. `bd update ID --status in_progress` - Claim it
+3. Do the work
+4. `bd close ID --reason "done"` - Complete
+5. `bd sync` - Sync changes
 
-That's it. The conductor sees the closed status via polling and handles cleanup.
+The conductor detects closed status via polling and handles cleanup.
+
+## TabzChrome API Usage
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/health` | Pre-flight check |
+| `POST /api/spawn` | Create worker terminal |
+| `GET /api/agents` | List all terminals, find by name |
+| `DELETE /api/agents/:id` | Kill terminal after cleanup |
+| `GET /api/tmux/sessions/:id/capture` | Debug stuck workers |
+
+### Worker Lookup by Issue ID
+
+```bash
+# Find worker by name (issue ID)
+curl -s http://localhost:8129/api/agents | jq -r '.data[] | select(.name == "V4V-ct9")'
+
+# Get session ID for tmux commands
+SESSION=$(curl -s http://localhost:8129/api/agents | jq -r '.data[] | select(.name == "V4V-ct9") | .id')
+```
+
+## Worker Dashboard
+
+The tmuxplexer `--watcher` mode shows:
+- All Claude sessions with real-time status
+- Context usage percentage
+- Working directory and git branch
+
+```
+ 📊 AI Only | 🎯 3 showing
+│[f] Filter | ● 3 attached | 🤖 3 AI
+│──────────────────────────────────────
+│  ● 🤖 V4V-ct9                    🟡 Processing [45%]
+│      📁 ~/projects/app/.worktrees/V4V-ct9
+│  ● 🤖 V4V-g2z                    ⏸️ Awaiting Input [30%]
+│      📁 ~/projects/app/.worktrees/V4V-g2z
+```
 
 ## Configuration
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| MAX_WORKERS | 3 | Maximum parallel workers (hard limit) |
-| POLL_INTERVAL | 30s | How often to check beads |
-| INITIAL_WAIT | 120s | Wait after first spawn before polling |
-
-**Why max 3?** Workers can spawn Explore agents, code-review subagents, etc. With 3 workers each potentially running subagents, you can easily have 6-9 Claude processes. More than 3 workers causes resource contention and merge conflicts.
+| MAX_WORKERS | 3 | Maximum parallel workers |
+| POLL_INTERVAL | 30s | How often to check status |
+| INITIAL_WAIT | 120s | Wait after spawn before polling |
 
 ## Notes
 
-- Requires beads daemon running (auto-started)
-- Workers must close issues for conductor to detect completion
-- Merges happen on main branch after each worker completes
-- Conflicts may need manual resolution
+- **Names terminals with issue ID** for easy lookup
+- Filters out epics from ready queue (not actionable)
+- Uses TabzChrome API instead of manual tracking
+- Kills terminals via API after merge
+- Launches dashboard for visual monitoring
+- Workers must close issues for detection

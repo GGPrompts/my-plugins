@@ -8,65 +8,153 @@ Spawn Claude terminals in isolated git worktrees to work on beads issues in para
 
 ## Prerequisites
 
-### Start Beads Daemon
-
-The daemon auto-syncs issues across workers. Start it before spawning:
+### Check TabzChrome Health
 
 ```bash
-# Check if daemon is running
-bd daemon status
-
-# Start if not running
-bd daemon start
-
-# Verify it's healthy
-bd daemon status --all
+curl -sf http://localhost:8129/api/health >/dev/null || echo "TabzChrome not running"
 ```
 
-The daemon ensures workers see the latest issue state without manual `bd sync`.
+### Start Beads Daemon
+
+```bash
+bd daemon status || bd daemon start
+```
 
 ## Quick Start
 
 ```bash
-# Ensure daemon is running
-bd daemon status || bd daemon start
+ISSUE_ID="V4V-ct9"
+WORKDIR=$(pwd)
 
-# Get ready issues
-bd ready --json
+# 1. Create worktree
+git worktree add ".worktrees/$ISSUE_ID" -b "feature/$ISSUE_ID"
 
-# Create worktree for issue
-bd worktree create .worktrees/ISSUE-ID --branch feature/ISSUE-ID
+# 2. Initialize dependencies (prevents worker from wasting time)
+# For conductor plugin path, use absolute path or find it
+INIT_SCRIPT="/home/marci/.claude/plugins/cache/my-plugins/conductor/*/scripts/init-worktree.sh"
+$INIT_SCRIPT ".worktrees/$ISSUE_ID" --quiet 2>/dev/null || true
 
-# Initialize dependencies (see "Worktree Initialization" section below)
-${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh .worktrees/ISSUE-ID
+# 3. Spawn terminal - use issue ID as name for easy lookup
+TOKEN=$(cat /tmp/tabz-auth-token)
+RESP=$(curl -s -X POST http://localhost:8129/api/spawn \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $TOKEN" \
+  -d "{
+    \"name\": \"$ISSUE_ID\",
+    \"workingDir\": \"$WORKDIR/.worktrees/$ISSUE_ID\",
+    \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions\"
+  }")
 
-# Spawn terminal via TabzChrome
+# 4. Get session name from response
+SESSION=$(echo "$RESP" | jq -r '.terminal.sessionName')
+echo "Spawned $ISSUE_ID in session $SESSION"
+
+# 5. Send minimal prompt (issue notes have all context)
+sleep 2
+PROMPT="Complete beads issue $ISSUE_ID. Read bd show $ISSUE_ID for context."
+tmux send-keys -t "$SESSION" -l "$PROMPT"
+sleep 0.5
+tmux send-keys -t "$SESSION" Enter
+```
+
+## Naming Convention
+
+**Use the issue ID as the terminal name.** This enables:
+
+- Easy lookup via `/api/agents`
+- Clear display in tmuxplexer dashboard
+- Correlation: terminal name = issue ID = branch name = worktree name
+
+```bash
+# Spawn with issue ID as name
+curl -X POST http://localhost:8129/api/spawn \
+  -d '{"name": "V4V-ct9", "workingDir": "...", "command": "..."}'
+
+# Terminal ID becomes: ctt-V4V-ct9-abc123
+# Display name: V4V-ct9
+```
+
+## TabzChrome API
+
+### List All Workers
+
+```bash
+curl -s http://localhost:8129/api/agents | jq '.data[]'
+```
+
+### Find Worker by Issue ID
+
+```bash
+# By name (recommended)
+curl -s http://localhost:8129/api/agents | jq -r '.data[] | select(.name == "V4V-ct9")'
+
+# By workingDir
+curl -s http://localhost:8129/api/agents | jq -r '.data[] | select(.workingDir | contains("V4V-ct9"))'
+```
+
+### Get Worker Session ID
+
+```bash
+SESSION=$(curl -s http://localhost:8129/api/agents | jq -r '.data[] | select(.name == "V4V-ct9") | .id')
+```
+
+### Kill Worker Terminal
+
+```bash
+curl -s -X DELETE "http://localhost:8129/api/agents/$SESSION" \
+  -H "X-Auth-Token: $(cat /tmp/tabz-auth-token)"
+```
+
+### Capture Terminal Output (Debug)
+
+```bash
+curl -s "http://localhost:8129/api/tmux/sessions/$SESSION/capture" | jq -r '.data.content' | tail -50
+```
+
+### Detect Stale Workers
+
+```bash
+# Workers with no activity in 5+ minutes
+CUTOFF=$(date -d '5 minutes ago' -Iseconds)
+curl -s http://localhost:8129/api/agents | jq -r \
+  --arg cutoff "$CUTOFF" '.data[] | select(.lastActivity < $cutoff) | .name'
+```
+
+## Worker Dashboard
+
+Launch tmuxplexer in watcher mode to monitor all Claude sessions:
+
+```bash
 TOKEN=$(cat /tmp/tabz-auth-token)
 curl -s -X POST http://localhost:8129/api/spawn \
   -H "Content-Type: application/json" \
   -H "X-Auth-Token: $TOKEN" \
   -d '{
-    "name": "Claude: ISSUE-ID",
-    "workingDir": "/path/to/.worktrees/ISSUE-ID",
-    "command": "claude --dangerously-skip-permissions"
+    "name": "Worker Dashboard",
+    "workingDir": "/home/marci/projects/tmuxplexer",
+    "command": "./tmuxplexer --watcher"
   }'
 ```
 
+The dashboard shows:
+- All Claude sessions with status (Processing, Awaiting Input, etc.)
+- Context usage percentage
+- Working directory and git branch
+- Attached/detached state
+
 ## Prompts: Keep Them Minimal
 
-The beads issue contains all the context (title, description, notes). The conductor sends the same standard prompt to every worker.
-
-### Standard Prompt
+The beads issue contains all context. Send a simple prompt:
 
 ```bash
-PROMPT="Complete beads issue ISSUE-ID. Read the issue notes for context. Use subagents in parallel when possible. Load any skills mentioned in the notes."
+PROMPT="Complete beads issue $ISSUE_ID. Read bd show $ISSUE_ID for context."
 ```
 
 The worker will:
-1. Run `bd show ISSUE-ID` to read the full context
+1. Run `bd show ISSUE-ID` to read full context
 2. Load any skills mentioned in notes
-3. Do the work (using subagents for parallel tasks)
-4. Close the issue
+3. Do the work
+4. Close the issue with `bd close ISSUE-ID --reason "done"`
 
 ### Issue Notes Structure
 
@@ -79,97 +167,45 @@ Description of what needs to be fixed...
 ## Approach
 Use the ui-styling skill for CSS audit.
 
-## Files
+## Key Files
 - frontend/src/app/admin/page.tsx
 
 ## When done
 bd close ISSUE-ID --reason \"summary\""
 ```
 
-### Finding Skills
-
-Use the skill matcher during planning:
-
-```bash
-${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "css theme dashboard"
-# Output: Use the ui-styling skill for UI components and styling patterns.
-```
-
-Add the suggested skill to the issue notes.
-
-### Avoid
-
-- Duplicating issue content in the prompt (it's in beads)
-- Different prompts for different workers (use the standard one)
-- Forgetting to add skill hints to notes during planning
-
 ## Sending Prompts via tmux
 
 ```bash
-SESSION="ctt-default-abc123"  # From spawn response
-
-# Get prompt from issue notes
-PROMPT=$(bd show ISSUE-ID --json | jq -r '.[0].notes')
+SESSION="ctt-V4V-ct9-abc123"
 
 # Send prompt (literal mode preserves formatting)
 tmux send-keys -t "$SESSION" -l "$PROMPT"
-
-# CRITICAL: 0.3s delay prevents submit before prompt loads
 sleep 0.5
-
-# Submit
-tmux send-keys -t "$SESSION" C-m
-
-echo "Prompt sent to $SESSION"
+tmux send-keys -t "$SESSION" Enter
 
 # Verify delivery
-echo "Verification (last 5 lines):"
 tmux capture-pane -t "$SESSION" -p | tail -5
 ```
 
-### Fallback: load-buffer (for problematic prompts)
-
-If special characters cause issues (rare), use load-buffer:
-
-```bash
-echo "$PROMPT" > /tmp/prompt-$$.txt
-tmux load-buffer /tmp/prompt-$$.txt
-tmux paste-buffer -t "$SESSION"
-sleep 0.5
-tmux send-keys -t "$SESSION" C-m
-rm /tmp/prompt-$$.txt
-```
-
-### Common tmux Issues
-
-| Problem | Cause | Fix |
-|---------|-------|-----|
-| Prompt doesn't submit | Missing delay | Add `sleep 0.5` before `C-m` |
-| Partial prompt sent | Long prompt | Increase delay to 0.5s |
-| Worker sits idle | Prompt not received | Verify with `tmux capture-pane` |
-
 ## Monitoring Workers
 
+### Via TabzChrome API
+
 ```bash
-# Summary of all workers
-${CLAUDE_PLUGIN_ROOT}/scripts/monitor-workers.sh --summary
-
-# Detailed status (session|status|context%)
-${CLAUDE_PLUGIN_ROOT}/scripts/monitor-workers.sh --status
-
-# Check if issue is closed
-${CLAUDE_PLUGIN_ROOT}/scripts/monitor-workers.sh --check-issue ISSUE-ID
+# Get all workers with status
+curl -s http://localhost:8129/api/agents | jq '.data[] | {name, state, lastActivity, workingDir}'
 ```
 
-### Status States
+### Via tmuxplexer Dashboard
 
-| Status | Meaning | Action |
-|--------|---------|--------|
-| `tool_use` | Worker executing | Wait |
-| `processing` | Worker thinking | Wait |
-| `awaiting_input` | Worker idle at prompt | May need nudge |
-| `asking_user` | Waiting for user answer | Answer or nudge |
-| `stale` | No activity | Check/restart |
+The `--watcher` mode shows real-time status:
+
+| Status | Meaning |
+|--------|---------|
+| 🟡 Processing | Worker thinking |
+| ⏸️ Awaiting Input | Idle at prompt |
+| 🔧 Tool Use | Executing a tool |
 
 ### Nudging Idle Workers
 
@@ -177,67 +213,37 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/monitor-workers.sh --check-issue ISSUE-ID
 # If worker finished but didn't close issue
 tmux send-keys -t "$SESSION" -l "Close the issue: bd close ISSUE-ID --reason done"
 sleep 0.5
-tmux send-keys -t "$SESSION" C-m
-```
-
-## Browser Debugging (via tabz MCP)
-
-Use tabz MCP tools to check browser state during QA:
-
-```bash
-# Check for console errors
-MCPSearch: select:mcp__tabz__tabz_get_console_logs
-mcp__tabz__tabz_get_console_logs with level="error"
-
-# Capture network issues
-MCPSearch: select:mcp__tabz__tabz_enable_network_capture
-MCPSearch: select:mcp__tabz__tabz_get_network_requests
-mcp__tabz__tabz_enable_network_capture
-# ... trigger action ...
-mcp__tabz__tabz_get_network_requests with filter="error" or statusFilter="error"
-
-# Screenshot for visual QA
-MCPSearch: select:mcp__tabz__tabz_screenshot
-mcp__tabz__tabz_screenshot
-```
-
-## Worker Workflow
-
-Workers use standard beads - no special instructions needed:
-
-```bash
-# Worker does this automatically:
-bd ready --json                           # Find work
-bd update ID --status in_progress --json  # Claim it
-# ... do the work ...
-bd close ID --reason "Done" --json        # Complete
-bd sync                                   # End of session
+tmux send-keys -t "$SESSION" Enter
 ```
 
 ## Cleanup
 
 ```bash
-# Remove worktree when done
-bd worktree remove .worktrees/ISSUE-ID
+ISSUE_ID="V4V-ct9"
 
-# Kill terminal session
-tmux kill-session -t SESSION_NAME
+# Get session ID
+SESSION=$(curl -s http://localhost:8129/api/agents | jq -r ".data[] | select(.name == \"$ISSUE_ID\") | .id")
+
+# Kill terminal via API
+curl -s -X DELETE "http://localhost:8129/api/agents/$SESSION" \
+  -H "X-Auth-Token: $(cat /tmp/tabz-auth-token)"
+
+# Remove worktree
+git worktree remove ".worktrees/$ISSUE_ID" --force
+git branch -d "feature/$ISSUE_ID"
 ```
 
 ## Worktree Initialization
 
-Worktrees share git history but NOT node_modules, .venv, or other dependency folders. Initialize dependencies before spawning workers to avoid wasted time.
-
-### Quick Initialize
+Worktrees share git history but NOT node_modules, .venv, etc. Initialize before spawning:
 
 ```bash
-# After creating worktree, before spawning
-${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh .worktrees/ISSUE-ID
+# Auto-detect and install dependencies
+INIT_SCRIPT=$(find ~/.claude/plugins -name "init-worktree.sh" -path "*conductor*" | head -1)
+$INIT_SCRIPT ".worktrees/$ISSUE_ID" --quiet
 ```
 
 ### What It Does
-
-The init script auto-detects project types and installs dependencies:
 
 | Detected File | Action |
 |---------------|--------|
@@ -246,51 +252,30 @@ The init script auto-detects project types and installs dependencies:
 | `requirements.txt` | `uv pip install -r requirements.txt` |
 | `Cargo.toml` | `cargo fetch` |
 | `go.mod` | `go mod download` |
-| `Gemfile` | `bundle install` |
 
 Also handles monorepos with `frontend/`, `backend/`, `packages/*` subdirectories.
 
-### Manual Initialization
-
-If the script doesn't cover your setup:
-
-```bash
-WORKTREE=".worktrees/ISSUE-ID"
-
-# Node.js projects
-cd "$WORKTREE" && npm install
-
-# Python projects (with uv)
-cd "$WORKTREE" && uv venv && source .venv/bin/activate && uv pip install -e ".[dev]"
-
-# Monorepos - install specific workspaces
-cd "$WORKTREE/frontend" && npm install
-cd "$WORKTREE/backend" && uv pip install -e ".[dev]"
-```
-
 ### Parallel Initialization
 
-For multiple workers, initialize in parallel before spawning:
-
 ```bash
-# Create all worktrees first
-for ID in ISSUE-1 ISSUE-2 ISSUE-3; do
-  bd worktree create ".worktrees/$ID" --branch "feature/$ID"
+# Create all worktrees
+for ID in V4V-ct9 V4V-g2z V4V-3wh; do
+  git worktree add ".worktrees/$ID" -b "feature/$ID"
 done
 
-# Initialize in parallel (backgrounded)
-for ID in ISSUE-1 ISSUE-2 ISSUE-3; do
-  ${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh ".worktrees/$ID" &
+# Initialize in parallel
+for ID in V4V-ct9 V4V-g2z V4V-3wh; do
+  $INIT_SCRIPT ".worktrees/$ID" --quiet &
 done
-wait  # Wait for all to complete
+wait
 
 # Now spawn workers
 ```
 
 ## Notes
 
-- Always create worktrees BEFORE spawning
-- Use `bd worktree create` (not raw `git worktree`) for beads redirect
-- **Initialize dependencies BEFORE spawning** to avoid worker delays
+- **Name terminals with issue ID** for easy lookup via API
+- Create worktrees BEFORE spawning
+- Initialize dependencies BEFORE spawning to avoid worker delays
+- Use `BEADS_NO_DAEMON=1` in worker command (worktrees share DB)
 - Workers are vanilla Claude - they use beads naturally
-- Store prompts in `--notes` field for easy retrieval

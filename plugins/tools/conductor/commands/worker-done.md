@@ -1,6 +1,6 @@
 ---
 description: "Clean up after a worker completes - merge, remove worktree, sync beads"
-argument-hint: "WORKTREE_PATH"
+argument-hint: "ISSUE_ID"
 ---
 
 # Worker Done
@@ -10,66 +10,98 @@ Clean up after a worker finishes their issue.
 ## Usage
 
 ```bash
-/conductor:worker-done .worktrees/ISSUE-ID
+/conductor:worker-done V4V-ct9
 ```
 
 ## What This Does
 
-1. **Merge changes** from worktree branch to main
-2. **Remove worktree** via beads
-3. **Sync beads** to persist state
-4. **Kill tmux session** if still running
+1. **Verify issue is closed** in beads
+2. **Kill terminal** via TabzChrome API
+3. **Merge changes** from worktree branch to main
+4. **Remove worktree** and branch
+5. **Sync beads** to persist state
 
-## Manual Steps
+## Quick Cleanup
 
 ```bash
-WORKTREE=".worktrees/ISSUE-ID"
-BRANCH="feature/ISSUE-ID"
-SESSION="ctt-default-abc123"
+ISSUE_ID="V4V-ct9"
+TABZ_API="http://localhost:8129"
+TOKEN=$(cat /tmp/tabz-auth-token)
 
-# 1. Check issue is closed
-bd show ISSUE-ID --json | jq -r '.[0].status'  # Should be "closed"
+# 1. Verify issue is closed
+STATUS=$(bd show "$ISSUE_ID" --json | jq -r '.[0].status')
+[ "$STATUS" != "closed" ] && echo "Issue not closed!" && exit 1
 
-# 2. Merge changes
-git checkout main
-git merge "$BRANCH" --no-edit
+# 2. Kill terminal via API (find by name)
+SESSION=$(curl -s "$TABZ_API/api/agents" | jq -r --arg id "$ISSUE_ID" \
+  '.data[] | select(.name == $id) | .id')
+[ -n "$SESSION" ] && curl -s -X DELETE "$TABZ_API/api/agents/$SESSION" \
+  -H "X-Auth-Token: $TOKEN"
 
-# 3. Remove worktree
-bd worktree remove "$WORKTREE"
+# 3. Merge changes
+git merge "feature/$ISSUE_ID" --no-edit
 
-# 4. Delete branch
-git branch -d "$BRANCH"
+# 4. Remove worktree and branch
+git worktree remove ".worktrees/$ISSUE_ID" --force
+git branch -d "feature/$ISSUE_ID"
 
-# 5. Kill session
-tmux kill-session -t "$SESSION" 2>/dev/null || true
-
-# 6. Sync beads
+# 5. Sync beads
 bd sync
 ```
 
 ## Batch Cleanup
 
-After a wave of workers completes:
+Clean up all completed workers at once:
 
 ```bash
-# Find all closed issues with worktrees
-for dir in .worktrees/*/; do
-  ISSUE=$(basename "$dir")
-  STATUS=$(bd show "$ISSUE" --json 2>/dev/null | jq -r '.[0].status // "unknown"')
+TABZ_API="http://localhost:8129"
+TOKEN=$(cat /tmp/tabz-auth-token)
+
+# Find all worktree-based workers
+WORKERS=$(curl -s "$TABZ_API/api/agents" | jq -r '
+  .data[] | select(.workingDir | contains(".worktrees/")) | .name
+')
+
+for ISSUE_ID in $WORKERS; do
+  STATUS=$(bd show "$ISSUE_ID" --json 2>/dev/null | jq -r '.[0].status // "unknown"')
+
   if [ "$STATUS" = "closed" ]; then
-    echo "Cleaning up $ISSUE..."
-    git checkout main
-    git merge "feature/$ISSUE" --no-edit 2>/dev/null || true
-    bd worktree remove ".worktrees/$ISSUE" 2>/dev/null || true
-    git branch -d "feature/$ISSUE" 2>/dev/null || true
+    echo "Cleaning up $ISSUE_ID..."
+
+    # Kill terminal
+    SESSION=$(curl -s "$TABZ_API/api/agents" | jq -r --arg id "$ISSUE_ID" \
+      '.data[] | select(.name == $id) | .id')
+    [ -n "$SESSION" ] && curl -s -X DELETE "$TABZ_API/api/agents/$SESSION" \
+      -H "X-Auth-Token: $TOKEN"
+
+    # Merge and cleanup
+    git merge "feature/$ISSUE_ID" --no-edit 2>/dev/null || true
+    git worktree remove ".worktrees/$ISSUE_ID" --force 2>/dev/null || true
+    git branch -d "feature/$ISSUE_ID" 2>/dev/null || true
   fi
 done
+
 bd sync
+git push
+```
+
+## Finding Workers via API
+
+```bash
+# List all workers with worktrees
+curl -s http://localhost:8129/api/agents | jq '.data[] | select(.workingDir | contains(".worktrees/")) | {name, id, workingDir}'
+
+# Find specific worker by issue ID
+curl -s http://localhost:8129/api/agents | jq -r '.data[] | select(.name == "V4V-ct9")'
+
+# Get terminal output for debugging
+SESSION="ctt-V4V-ct9-abc123"
+curl -s "http://localhost:8129/api/tmux/sessions/$SESSION/capture" | jq -r '.data.content' | tail -50
 ```
 
 ## Worker Retro (Optional)
 
-Before cleanup, capture worker feedback on the closed issue:
+Before cleanup, capture worker feedback:
 
 ```bash
 bd update ISSUE-ID --notes "$(cat <<'EOF'
@@ -94,18 +126,14 @@ EOF
 
 ### Mining Retros
 
-Review past issues to find patterns:
-
 ```bash
-# Get retros from closed issues
 bd list --status closed --json | jq -r '.[] | select(.notes | contains("Retro")) | "\(.id): \(.notes)"'
 ```
 
-Patterns → improve PRIME.md, CLAUDE.md, prompt templates.
-
 ## Notes
 
+- **Find workers by name** (issue ID) via `/api/agents`
+- **Kill terminals via API** instead of `tmux kill-session`
 - Always verify issue is closed before cleanup
 - Merge conflicts require manual resolution
-- Use `bd sync` at the end to persist all changes
-- Worker retros are optional but valuable for prompt improvement
+- Use `bd sync && git push` at the end
