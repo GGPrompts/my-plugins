@@ -1,14 +1,6 @@
 {
   "name": "code-review",
-  "version": "1.0.0",
-  "description": "Code review practices, automated review, security scanning, and silent failure detection",
-  "skills": [
-    "./skills/code-review",
-    "./skills/review",
-    "./skills/security",
-    "./skills/silent-failures"
-  ],
-  "agents": [
-    "./agents/reviewer.md"
-  ]
+  "version": "2.0.0",
+  "description": "Automated code review for beads issues with confidence-based scoring and parallel specialized agents",
+  "author": "Marci"
 }
