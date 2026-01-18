@@ -1,162 +1,146 @@
 ---
 name: automating-browser
-description: "Controls Chrome browser: takes screenshots, clicks buttons, fills forms, downloads images, inspects pages, captures network requests. Use when user says: 'screenshot this', 'click the button', 'fill the form', 'download that image', 'what page am I on', 'check the browser', 'look at my screen', 'interact with the website', 'capture the page', 'get the HTML', 'inspect element'. Provides MCP tool discovery for tabz_* browser automation tools."
+description: "Controls Chrome browser: takes screenshots, clicks buttons, fills forms, downloads images, inspects pages, captures network requests, checks console errors, debugs API issues. Use when: 'screenshot', 'click', 'fill form', 'download image', 'check browser', 'look at screen', 'capture page', 'check for errors', 'debug network', 'API failing', 'console errors'. Provides MCP tool discovery for 70 tabz_* browser automation tools."
 ---
 
 # Tabz MCP - Browser Automation
 
 ## Overview
 
-Control Chrome browser programmatically via the Tabz MCP server. This skill dynamically discovers available tools (never goes stale) and provides workflow patterns for common browser automation tasks.
+Control Chrome browser programmatically via the Tabz MCP server. 70 tools for screenshots, interaction, network debugging, and more.
 
-## Tool Discovery
+## Tool Discovery (Claude Code)
 
-**Always discover available tools dynamically** - never assume which tools exist:
+Use MCPSearch to load tools before calling them:
 
-```bash
-# List all available Tabz tools
-mcp-cli tools tabz
+```
+# Search for tools
+MCPSearch with query: "screenshot"
 
-# Get schema for a specific tool (REQUIRED before calling)
-mcp-cli info tabz/<tool_name>
+# Load specific tool
+MCPSearch with query: "select:mcp__tabz__tabz_screenshot"
 
-# Search for tools by keyword
-mcp-cli grep "screenshot"
+# Then call it
+mcp__tabz__tabz_screenshot
 ```
 
-## Calling Tools
+## Browser Debugging (Common Issues)
 
-**Mandatory workflow** - always check schema before calling:
+### Check Console Errors
 
-```bash
-# Step 1: Check schema (REQUIRED)
-mcp-cli info tabz/tabz_screenshot
+```
+MCPSearch: select:mcp__tabz__tabz_get_console_logs
+mcp__tabz__tabz_get_console_logs with level="error"
+```
 
-# Step 2: Call with correct parameters
-mcp-cli call tabz/tabz_screenshot '{"selector": "#main"}'
+### Debug Network/API Issues
+
+```
+# 1. Enable capture BEFORE triggering the action
+MCPSearch: select:mcp__tabz__tabz_enable_network_capture
+mcp__tabz__tabz_enable_network_capture
+
+# 2. Trigger the action (click button, navigate, etc.)
+
+# 3. Get failed requests
+MCPSearch: select:mcp__tabz__tabz_get_network_requests
+mcp__tabz__tabz_get_network_requests with statusFilter="error"
+
+# Or filter by URL pattern
+mcp__tabz__tabz_get_network_requests with filter="api.example.com"
+```
+
+### Screenshot for Visual QA
+
+```
+MCPSearch: select:mcp__tabz__tabz_screenshot
+mcp__tabz__tabz_screenshot
+# Returns file path - use Read tool to view
+```
+
+### Check Page State
+
+```
+MCPSearch: select:mcp__tabz__tabz_get_page_info
+mcp__tabz__tabz_get_page_info
+# Returns URL, title, loading state
+
+MCPSearch: select:mcp__tabz__tabz_get_element
+mcp__tabz__tabz_get_element with selector="#error-message" includeStyles=true
 ```
 
 ## Tool Categories
 
-Discover tools by running `mcp-cli tools tabz`. Common categories include:
+Use `MCPSearch with query: "tabz"` to discover all available tools. Categories:
 
-| Category | Tools Pattern | Purpose |
-|----------|---------------|---------|
-| Tab Management | `tabz_list_tabs`, `tabz_switch_tab`, `tabz_rename_tab` | Navigate between tabs |
-| Tab Groups | `tabz_list_groups`, `tabz_create_group`, `tabz_update_group`, `tabz_add_to_group`, `tabz_ungroup_tabs` | Organize tabs into groups |
-| Claude Group | `tabz_claude_group_add`, `tabz_claude_group_remove`, `tabz_claude_group_status` | Highlight tabs Claude is working with |
-| Windows | `tabz_list_windows`, `tabz_create_window`, `tabz_update_window`, `tabz_close_window` | Manage browser windows |
-| Displays | `tabz_get_displays`, `tabz_tile_windows`, `tabz_popout_terminal` | Multi-monitor layouts, terminal popouts |
-| Audio | `tabz_speak`, `tabz_list_voices`, `tabz_play_audio` | TTS and audio file playback |
-| Page Info | `tabz_get_page_info`, `tabz_get_element` | Inspect page content |
-| Interaction | `tabz_click`, `tabz_fill` | Interact with elements |
-| Screenshots | `tabz_screenshot*` | Capture page visuals |
-| Downloads | `tabz_download*` | Download files/images |
-| Network | `tabz_enable_network_capture`, `tabz_get_network_requests`, `tabz_clear_network_requests` | Monitor API calls |
-| Scripting | `tabz_execute_script`, `tabz_get_console_logs` | Run JS, debug |
-| History | `tabz_history_search`, `tabz_history_visits`, `tabz_history_recent`, `tabz_history_delete_*` | Search and manage browsing history |
-| Sessions | `tabz_sessions_recently_closed`, `tabz_sessions_restore`, `tabz_sessions_devices` | Recover closed tabs, synced devices |
-| Cookies | `tabz_cookies_get`, `tabz_cookies_list`, `tabz_cookies_set`, `tabz_cookies_delete`, `tabz_cookies_audit` | Debug auth, audit trackers |
-| Emulation | `tabz_emulate_device`, `tabz_emulate_geolocation`, `tabz_emulate_network`, `tabz_emulate_media`, `tabz_emulate_vision` | Responsive testing, accessibility |
-| Notifications | `tabz_notification_show`, `tabz_notification_update`, `tabz_notification_clear`, `tabz_notification_list` | Desktop alerts |
+| Category | Tools | Purpose |
+|----------|-------|---------|
+| Tab Management | `list_tabs`, `switch_tab`, `rename_tab`, `open_url` | Navigate tabs |
+| Tab Groups | `create_group`, `add_to_group`, `ungroup_tabs` | Organize tabs |
+| Windows | `list_windows`, `create_window`, `tile_windows` | Window management |
+| Audio | `speak`, `list_voices`, `play_audio` | TTS notifications |
+| Page Info | `get_page_info`, `get_element`, `get_dom_tree` | Inspect content |
+| Interaction | `click`, `fill` | Click/type |
+| Screenshots | `screenshot`, `screenshot_full` | Capture visuals |
+| Downloads | `download_image`, `download_file` | Save files |
+| Network | `enable_network_capture`, `get_network_requests` | Debug APIs |
+| Console | `get_console_logs`, `execute_script` | Debug JS |
+| Emulation | `emulate_device`, `emulate_geolocation` | Responsive testing |
 
-## Tab Organization (Required)
+## Tab Groups (Parallel Workers)
 
-**ALWAYS group related tabs when opening multiple tabs for a task.** This keeps the user's browser organized and makes it clear which tabs are part of your workflow.
+When multiple Claude workers run in parallel, each MUST create their own named group:
 
-### Best Practice: Create Your Own Named Group
-
-**IMPORTANT:** When multiple Claude workers run in parallel, they MUST each create their own named group to avoid conflicts. Never rely on a shared group that other workers might also be using.
-
-```bash
-# Create a group unique to your task (use issue ID or descriptive name)
-mcp-cli call tabz/tabz_create_group '{"tabIds": [123, 456], "title": "TabzChrome-abc: Research", "color": "blue"}'
-
-# Store the groupId from the response, then add more tabs as needed
-mcp-cli call tabz/tabz_add_to_group '{"groupId": 12345, "tabIds": [789]}'
-
-# When done, ungroup to clean up
-mcp-cli call tabz/tabz_ungroup_tabs '{"tabIds": [123, 456, 789]}'
 ```
+# Create unique group for this worker
+MCPSearch: select:mcp__tabz__tabz_create_group
+mcp__tabz__tabz_create_group with tabIds=[123,456] title="ISSUE-ID: Research" color="blue"
 
-### Naming Convention for Worker Groups
+# Add more tabs later
+mcp__tabz__tabz_add_to_group with groupId=12345 tabIds=[789]
 
-Use unique, descriptive names to avoid conflicts:
-- `"TabzChrome-abc: API Docs"` - Include issue ID
-- `"Worker-1: Research"` - Include worker identifier
-- `"Feature-X: Testing"` - Include feature name
-
-### Claude Active Group (Single Worker Only)
-
-The Claude Active group (`tabz_claude_group_add`) is a shared purple group. **Only use it when you're the ONLY Claude session running.** For parallel work, create named groups instead.
-
-```bash
-# Only for single-worker scenarios
-mcp-cli call tabz/tabz_claude_group_add '{"tabId": 1762556601}'
+# Cleanup when done
+mcp__tabz__tabz_ungroup_tabs with tabIds=[123,456,789]
 ```
-
-### When to Group Tabs
-
-| Scenario | Action |
-|----------|--------|
-| Parallel workers | Create named group with issue ID |
-| Single worker | Can use Claude Active group |
-| Opening 2+ related tabs | Create a named group |
-| Research task | Use "[IssueID]: Research" group |
-| Comparing pages | Use "[IssueID]: Compare" group |
-| Done with a task | Ungroup tabs |
 
 **Group colors:** grey, blue, red, yellow, green, pink, purple, cyan
 
 ## Quick Patterns
 
-**Take a screenshot:**
-```bash
-mcp-cli call tabz/tabz_screenshot '{}'
+**Screenshot:**
+```
+mcp__tabz__tabz_screenshot
 ```
 
-**Click a button:**
-```bash
-mcp-cli call tabz/tabz_click '{"selector": "button.submit"}'
+**Click:**
+```
+mcp__tabz__tabz_click with selector="button.submit"
 ```
 
-**Fill a form field:**
-```bash
-mcp-cli call tabz/tabz_fill '{"selector": "#email", "value": "test@example.com"}'
+**Fill form:**
+```
+mcp__tabz__tabz_fill with selector="#email" value="test@example.com"
 ```
 
-**Switch to a specific tab:**
-```bash
-# First list tabs to find the ID (returns Chrome tab IDs like 1762556601)
-mcp-cli call tabz/tabz_list_tabs '{}'
-# Then switch using the actual tabId from the list
-mcp-cli call tabz/tabz_switch_tab '{"tabId": 1762556601}'
+**Switch tab:**
+```
+mcp__tabz__tabz_list_tabs  # Get tab IDs (large integers like 1762556601)
+mcp__tabz__tabz_switch_tab with tabId=1762556601
 ```
 
-**Download AI-generated image (ChatGPT/Copilot):**
-```bash
-# Use specific selector to avoid matching avatars
-mcp-cli call tabz/tabz_download_image '{"selector": "img[src*=\"oaiusercontent.com\"]"}'
+**TTS notification:**
 ```
-
-**Download full-res from expanded modal:**
-```bash
-# When user clicks image to expand, find modal image URL then download
-mcp-cli call tabz/tabz_execute_script '{"code": "document.querySelector(\"[role=dialog] img\").src"}'
-mcp-cli call tabz/tabz_download_file '{"url": "<url-from-above>"}'
+mcp__tabz__tabz_speak with text="Done!" priority="high"
 ```
 
 ## Important Notes
 
-1. **Active tab detection**: `tabz_list_tabs` uses Chrome Extension API - the `active: true` field shows the user's ACTUAL focused tab (not a guess)
-2. **Tab IDs**: Chrome tab IDs are large numbers (e.g., `1762556601`), not simple indices like `1, 2, 3`
-3. **Tab targeting**: After `tabz_switch_tab`, all subsequent tools auto-target that tab
-4. **Parallel tab ops**: `tabz_screenshot`, `tabz_screenshot_full`, `tabz_click`, `tabz_fill` accept optional `tabId` param to target background tabs without switching
-5. **Network capture**: Must call `tabz_enable_network_capture` BEFORE the page makes requests
-6. **Selectors**: Use CSS selectors - `#id`, `.class`, `button`, `input[type="text"]`
-7. **Screenshots**: Return file paths - use Read tool to display images to user
+1. **Tab IDs**: Chrome tab IDs are large integers (e.g., `1762556601`), not 1, 2, 3
+2. **Always load tools first**: Use MCPSearch before calling any mcp__tabz__ tool
+3. **Network capture**: Enable BEFORE the page makes requests
+4. **Screenshots**: Return file paths - use Read tool to view
+5. **Selectors**: CSS selectors - `#id`, `.class`, `button[type="submit"]`
 
 ## Resources
 
-For detailed workflow examples and common automation patterns, see:
-- `references/workflows.md` - Step-by-step workflows for complex tasks
+See `references/workflows.md` for more patterns.

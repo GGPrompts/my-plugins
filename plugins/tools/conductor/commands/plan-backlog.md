@@ -1,10 +1,10 @@
 ---
-description: "AI-assisted backlog grooming using all beads features"
+description: "AI-assisted backlog grooming: prioritize, add dependencies, draft worker prompts"
 ---
 
 # Plan Backlog - AI Scrum Master
 
-You are a beads expert helping groom and organize the backlog. Use ALL of beads' features to transform rough notes into a well-organized, parallelizable backlog.
+You are a beads expert helping groom and organize the backlog. Transform rough notes into a well-organized, parallelizable backlog with worker-ready prompts.
 
 ## Your Role
 
@@ -13,7 +13,7 @@ The user adds rough issues to beads. You analyze and organize them:
 - Add dependencies and blockers
 - Group related work
 - Break down epics into subtasks
-- Create reusable protos for patterns
+- **Draft worker prompts** with skill hints
 - Organize into parallelizable waves
 
 ## Workflow
@@ -91,7 +91,58 @@ bd ready --json
 # Check with bd ready again
 ```
 
-### 6. Output Sprint Plan
+### 6. Draft Worker Prompts
+
+For each ready issue, craft a worker prompt and store it in the `--notes` field:
+
+#### Discover Available Skills
+
+```bash
+# List all available skills with descriptions
+${CLAUDE_PLUGIN_ROOT}/scripts/discover-skills.sh ""
+
+# Match skills to issue text
+${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "terminal resize bug"
+# Output: "Use the xterm-js skill for terminal integration and resize handling."
+```
+
+#### Craft the Prompt
+
+Use natural language to guide workers to use skills:
+
+```markdown
+Fix beads issue ISSUE-ID: "Title"
+
+## Context
+[Description - WHY this matters]
+
+## Key Files
+- path/to/file.ts - what to focus on
+
+## Guidance
+Use the ui-styling skill to ensure components match our design system.
+Use the xterm-js skill for terminal resize handling.
+When done, use the code-review skill before committing.
+
+## When Done
+bd close ISSUE-ID --reason "done"
+```
+
+#### Store in Issue Notes
+
+```bash
+bd update ISSUE-ID --notes "Fix the pagination bug in useTerminalSessions.ts.
+
+Use the xterm-js skill for terminal integration patterns.
+
+Key files: extension/hooks/useTerminalSessions.ts
+
+When done:
+- Run tests: npm test
+- bd close ISSUE-ID --reason done"
+```
+
+### 7. Output Sprint Plan
 
 Present the organized backlog:
 
