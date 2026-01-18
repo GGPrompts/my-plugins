@@ -46,6 +46,9 @@ spawn_worker() {
   # Create worktree
   bd worktree create "$WORKTREE" --branch "feature/$ISSUE_ID"
 
+  # Initialize dependencies (prevents workers from wasting time on npm install)
+  ${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh "$WORKTREE" --quiet
+
   # Get prompt from notes
   local PROMPT=$(bd show "$ISSUE_ID" --json | jq -r '.[0].notes // "Work on issue '"$ISSUE_ID"'. When done: bd close '"$ISSUE_ID"' --reason done"')
 
@@ -62,7 +65,7 @@ spawn_worker() {
 
   local SESSION=$(echo "$RESPONSE" | jq -r '.sessionName')
 
-  # Send prompt
+  # Send prompt (literal mode preserves formatting)
   sleep 2
   tmux send-keys -t "$SESSION" -l "$PROMPT"
   sleep 0.3

@@ -37,6 +37,9 @@ bd ready --json
 # Create worktree for issue
 bd worktree create .worktrees/ISSUE-ID --branch feature/ISSUE-ID
 
+# Initialize dependencies (see "Worktree Initialization" section below)
+${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh .worktrees/ISSUE-ID
+
 # Spawn terminal via TabzChrome
 TOKEN=$(cat /tmp/tabz-auth-token)
 curl -s -X POST http://localhost:8129/api/spawn \
@@ -107,15 +110,39 @@ Avoid:
 
 ## Sending Prompts via tmux
 
-**CRITICAL: Always use sleep before C-m to prevent premature submission:**
-
 ```bash
 SESSION="ctt-default-abc123"  # From spawn response
 
-# Send prompt with proper timing
-tmux send-keys -t "$SESSION" -l "$(bd show ISSUE-ID --json | jq -r '.[0].notes')"
-sleep 0.3  # CRITICAL: prevents prompt corruption
+# Get prompt from issue notes
+PROMPT=$(bd show ISSUE-ID --json | jq -r '.[0].notes')
+
+# Send prompt (literal mode preserves formatting)
+tmux send-keys -t "$SESSION" -l "$PROMPT"
+
+# CRITICAL: 0.3s delay prevents submit before prompt loads
+sleep 0.3
+
+# Submit
 tmux send-keys -t "$SESSION" C-m
+
+echo "Prompt sent to $SESSION"
+
+# Verify delivery
+echo "Verification (last 5 lines):"
+tmux capture-pane -t "$SESSION" -p | tail -5
+```
+
+### Fallback: load-buffer (for problematic prompts)
+
+If special characters cause issues (rare), use load-buffer:
+
+```bash
+echo "$PROMPT" > /tmp/prompt-$$.txt
+tmux load-buffer /tmp/prompt-$$.txt
+tmux paste-buffer -t "$SESSION"
+sleep 0.3
+tmux send-keys -t "$SESSION" C-m
+rm /tmp/prompt-$$.txt
 ```
 
 ### Common tmux Issues
@@ -123,8 +150,8 @@ tmux send-keys -t "$SESSION" C-m
 | Problem | Cause | Fix |
 |---------|-------|-----|
 | Prompt doesn't submit | Missing delay | Add `sleep 0.3` before `C-m` |
-| Partial prompt sent | Special characters | Use `-l` flag for literal text |
-| Worker sits idle | Prompt not received | Check session name matches |
+| Partial prompt sent | Long prompt | Increase delay to 0.5s |
+| Worker sits idle | Prompt not received | Verify with `tmux capture-pane` |
 
 ## Monitoring Workers
 
@@ -202,9 +229,73 @@ bd worktree remove .worktrees/ISSUE-ID
 tmux kill-session -t SESSION_NAME
 ```
 
+## Worktree Initialization
+
+Worktrees share git history but NOT node_modules, .venv, or other dependency folders. Initialize dependencies before spawning workers to avoid wasted time.
+
+### Quick Initialize
+
+```bash
+# After creating worktree, before spawning
+${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh .worktrees/ISSUE-ID
+```
+
+### What It Does
+
+The init script auto-detects project types and installs dependencies:
+
+| Detected File | Action |
+|---------------|--------|
+| `package.json` | `npm ci` (or pnpm/yarn/bun if lockfile exists) |
+| `pyproject.toml` | `uv pip install -e .` (or pip if no uv) |
+| `requirements.txt` | `uv pip install -r requirements.txt` |
+| `Cargo.toml` | `cargo fetch` |
+| `go.mod` | `go mod download` |
+| `Gemfile` | `bundle install` |
+
+Also handles monorepos with `frontend/`, `backend/`, `packages/*` subdirectories.
+
+### Manual Initialization
+
+If the script doesn't cover your setup:
+
+```bash
+WORKTREE=".worktrees/ISSUE-ID"
+
+# Node.js projects
+cd "$WORKTREE" && npm install
+
+# Python projects (with uv)
+cd "$WORKTREE" && uv venv && source .venv/bin/activate && uv pip install -e ".[dev]"
+
+# Monorepos - install specific workspaces
+cd "$WORKTREE/frontend" && npm install
+cd "$WORKTREE/backend" && uv pip install -e ".[dev]"
+```
+
+### Parallel Initialization
+
+For multiple workers, initialize in parallel before spawning:
+
+```bash
+# Create all worktrees first
+for ID in ISSUE-1 ISSUE-2 ISSUE-3; do
+  bd worktree create ".worktrees/$ID" --branch "feature/$ID"
+done
+
+# Initialize in parallel (backgrounded)
+for ID in ISSUE-1 ISSUE-2 ISSUE-3; do
+  ${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh ".worktrees/$ID" &
+done
+wait  # Wait for all to complete
+
+# Now spawn workers
+```
+
 ## Notes
 
 - Always create worktrees BEFORE spawning
 - Use `bd worktree create` (not raw `git worktree`) for beads redirect
+- **Initialize dependencies BEFORE spawning** to avoid worker delays
 - Workers are vanilla Claude - they use beads naturally
 - Store prompts in `--notes` field for easy retrieval
