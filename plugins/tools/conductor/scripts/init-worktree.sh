@@ -135,6 +135,25 @@ if [ -f "mix.exs" ]; then
   INSTALLED="$INSTALLED elixir"
 fi
 
+# Install pre-commit hook for cleanup agent
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HOOK_SOURCE="$SCRIPT_DIR/pre-commit-cleanup.sh"
+HOOK_TARGET=".git/hooks/pre-commit"
+
+# Worktrees have .git as a file pointing to the real git dir
+if [ -f ".git" ]; then
+  GIT_DIR=$(cat .git | sed 's/gitdir: //')
+  HOOK_TARGET="$GIT_DIR/hooks/pre-commit"
+fi
+
+if [ -f "$HOOK_SOURCE" ]; then
+  mkdir -p "$(dirname "$HOOK_TARGET")"
+  cp "$HOOK_SOURCE" "$HOOK_TARGET"
+  chmod +x "$HOOK_TARGET"
+  log "  -> Installed pre-commit cleanup hook"
+  INSTALLED="$INSTALLED hook"
+fi
+
 # Summary
 if [ -n "$INSTALLED" ]; then
   log "Initialized:$INSTALLED"

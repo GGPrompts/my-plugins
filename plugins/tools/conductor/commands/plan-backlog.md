@@ -6,6 +6,8 @@ description: "AI-assisted backlog grooming: prioritize, add dependencies, draft 
 
 You are a beads expert helping groom and organize the backlog. Transform rough notes into a well-organized, parallelizable backlog with worker-ready prompts.
 
+**Use MCP tools when available** - they're more efficient than CLI.
+
 ## Your Role
 
 The user adds rough issues to beads. You analyze and organize them:
@@ -13,18 +15,27 @@ The user adds rough issues to beads. You analyze and organize them:
 - Add dependencies and blockers
 - Group related work
 - Break down epics into subtasks
-- **Draft worker prompts** with skill hints
+- **Prepare issue notes** with skill hints and context
 - Organize into parallelizable waves
 
 ## Workflow
 
 ### 1. Analyze Current State
 
+**Using MCP (preferred):**
+```python
+mcp__beads__stats()                    # Overview
+mcp__beads__ready()                    # What's unblocked
+mcp__beads__blocked()                  # What's stuck
+mcp__beads__list(status="open")        # All open work
+```
+
+**CLI fallback:**
 ```bash
-bd stats                     # Overview
-bd ready --json              # What's unblocked
-bd blocked --json            # What's stuck
-bd list --status open --json # All open work
+bd stats
+bd ready --json
+bd blocked --json
+bd list --status open --json
 ```
 
 ### 2. Review and Prioritize
@@ -32,17 +43,22 @@ bd list --status open --json # All open work
 For each issue, consider:
 - Is it blocking other work? → Raise priority
 - Is it a quick win? → Raise priority
-- Does it have dependencies? → Add them with `bd dep add`
-- What labels apply? → Add them with `bd label add`
+- Does it have dependencies? → Add them
+- What labels apply? → Add them
 
-```bash
+**Using MCP:**
+```python
 # Set priority (0=critical, 1=high, 2=medium, 3=low, 4=backlog)
-bd update ID --priority 1 --json
+mcp__beads__update(issue_id="ID", priority=1)
 
 # Add dependencies (blocker blocks blocked)
-bd dep add BLOCKED-ID BLOCKER-ID --json
+mcp__beads__dep(issue_id="BLOCKED-ID", depends_on_id="BLOCKER-ID")
+```
 
-# Add labels for grouping
+**CLI fallback:**
+```bash
+bd update ID --priority 1 --json
+bd dep add BLOCKED-ID BLOCKER-ID --json
 bd label add ID frontend,auth --json
 ```
 
@@ -50,65 +66,36 @@ bd label add ID frontend,auth --json
 
 Epics should be decomposed into smaller tasks:
 
-```bash
+**Using MCP:**
+```python
 # Create epic
-bd create "Auth System" --type epic --priority 1 --json
+mcp__beads__create(
+  title="Auth System",
+  issue_type="epic",
+  priority=1
+)
 
-# Add subtasks (auto-numbered as children)
-bd create "Design auth flow" --type task --json
-bd create "Implement login" --type task --json
-bd create "Add tests" --type task --json
+# Add subtasks
+mcp__beads__create(title="Design auth flow", issue_type="task")
+mcp__beads__create(title="Implement login", issue_type="task")
+mcp__beads__create(title="Add tests", issue_type="task")
 
 # Wire dependencies
-bd dep add IMPL-ID DESIGN-ID --json
-bd dep add TESTS-ID IMPL-ID --json
+mcp__beads__dep(issue_id="IMPL-ID", depends_on_id="DESIGN-ID")
+mcp__beads__dep(issue_id="TESTS-ID", depends_on_id="IMPL-ID")
 ```
 
-### 4. Create Protos for Patterns
+### 4. Prepare Issue Notes
 
-If you see repeating patterns, create reusable protos:
+The conductor sends the same standard prompt to every worker. All context goes in the issue notes/design/acceptance fields.
 
-```bash
-# Create a template epic
-bd create "Code Review: {{feature}}" --type epic --label template --json
-bd create "Review implementation" --type task --json
-bd create "Check test coverage" --type task --json
-bd create "Verify docs updated" --type task --json
+#### Update Issue with Context
 
-# Later, spawn instances
-bd mol pour mol-code-review --var feature="auth"
-```
-
-### 5. Organize Into Waves
-
-Group ready issues for parallel execution:
-
-```bash
-# Wave 1 = all currently ready (no blockers)
-bd ready --json
-
-# After Wave 1 completes, new work becomes ready
-# Check with bd ready again
-```
-
-### 6. Prepare Issue Notes
-
-The conductor sends the same standard prompt to every worker. All context goes in the issue notes.
-
-#### Find Relevant Skills
-
-```bash
-# Match skills to issue text
-${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "css theme dashboard"
-# Output: "Use the ui-styling skill for UI components and styling patterns."
-```
-
-#### Update Issue Notes
-
-Add context and skill hints to the issue:
-
-```bash
-bd update ISSUE-ID --notes "## Problem
+**Using MCP:**
+```python
+mcp__beads__update(
+  issue_id="ISSUE-ID",
+  notes="""## Problem
 Brief description of what needs fixing.
 
 ## Approach
@@ -118,29 +105,58 @@ Use the ui-styling skill for CSS audit.
 - path/to/file.ts
 
 ## When Done
-bd close ISSUE-ID --reason \"summary\""
+Close issue with reason summary""",
+  design="Technical approach notes here",
+  acceptance_criteria="""- [ ] Feature works as expected
+- [ ] Tests pass
+- [ ] No console errors"""
+)
+```
+
+**CLI fallback:**
+```bash
+bd update ISSUE-ID --notes "## Problem
+Brief description...
+
+## Approach
+Use the ui-styling skill...
+
+## Key Files
+- path/to/file.ts"
 ```
 
 #### Notes Structure
 
-| Section | Purpose |
-|---------|---------|
-| Problem | What's wrong (if not clear from title) |
-| Approach | Skill to use, strategy hints |
-| Key Files | Where to focus |
-| When Done | Reminder to close issue |
+| Field | Purpose |
+|-------|---------|
+| `notes` | Problem, approach, skill hints, key files |
+| `design` | Technical approach, architecture decisions |
+| `acceptance_criteria` | Checkboxes for definition of done |
 
 Keep notes concise - workers read the issue description too.
 
 #### Parallelization Hints
 
-For multi-part tasks, add to the Approach section:
+For multi-part tasks, add to notes:
 
 ```
 Use subagents in parallel to scaffold Dashboard, Settings, and Profile pages.
 ```
 
-### 7. Output Sprint Plan
+### 5. Organize Into Waves
+
+Group ready issues for parallel execution:
+
+**Using MCP:**
+```python
+# Wave 1 = all currently ready (no blockers)
+mcp__beads__ready()
+
+# After Wave 1 completes, new work becomes ready
+# Check with mcp__beads__ready() again
+```
+
+### 6. Output Sprint Plan
 
 Present the organized backlog:
 
@@ -155,24 +171,7 @@ Present the organized backlog:
 | Issue | Blocked By | Description |
 |-------|------------|-------------|
 | bd-zzz | bd-xxx | Refactor auth flow |
-
-## Protos Available
-- `mol-code-review` - Standard review checklist
-- `mol-feature` - Feature development workflow
 ```
-
-## Beads Commands Reference
-
-| Command | Purpose |
-|---------|---------|
-| `bd ready` | Find unblocked work |
-| `bd blocked` | See what's stuck and why |
-| `bd update ID --priority N` | Set priority (0-4) |
-| `bd dep add A B` | A is blocked by B |
-| `bd label add ID label` | Add label |
-| `bd create --type epic` | Create epic |
-| `bd mol pour PROTO` | Spawn workflow from template |
-| `bd mol distill EPIC` | Extract template from ad-hoc work |
 
 ## Decision Guidance
 
@@ -182,7 +181,19 @@ Present the organized backlog:
 | Quick win (<1hr) | Priority 1-2 |
 | User-facing bug | Priority 0-1 |
 | Nice-to-have | Priority 3-4 |
-| Repeating pattern | Create proto |
 | Large feature | Break into epic + subtasks |
 
-Start by running `bd stats` and `bd ready --json` to understand the current state.
+## Sparse Backlog?
+
+If there are few/no ready issues, offer to brainstorm:
+
+"Your backlog is light. Want to brainstorm what needs to be done?"
+
+Then help the user think through:
+- What work needs to be done (rough ideas → concrete tasks)
+- How to structure it (epics, dependencies, waves)
+- What would "done" look like
+
+See the brainstorm skill references for dependency patterns and epic structures.
+
+Start by running `mcp__beads__stats()` and `mcp__beads__ready()` to understand the current state.
