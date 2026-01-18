@@ -91,72 +91,53 @@ bd ready --json
 # Check with bd ready again
 ```
 
-### 6. Draft Worker Prompts
+### 6. Prepare Issue Notes
 
-For each ready issue, craft a worker prompt and store it in the `--notes` field:
+The conductor sends the same standard prompt to every worker. All context goes in the issue notes.
 
-#### Discover Available Skills
+#### Find Relevant Skills
 
 ```bash
-# List all available skills with descriptions
-${CLAUDE_PLUGIN_ROOT}/scripts/discover-skills.sh ""
-
 # Match skills to issue text
-${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "terminal resize bug"
-# Output: "Use the xterm-js skill for terminal integration and resize handling."
+${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "css theme dashboard"
+# Output: "Use the ui-styling skill for UI components and styling patterns."
 ```
 
-#### Craft the Prompt
+#### Update Issue Notes
 
-Use natural language to guide workers to use skills and subagents:
+Add context and skill hints to the issue:
 
-```markdown
-Fix beads issue ISSUE-ID: "Title"
+```bash
+bd update ISSUE-ID --notes "## Problem
+Brief description of what needs fixing.
 
-## Context
-[Description - WHY this matters]
+## Approach
+Use the ui-styling skill for CSS audit.
 
 ## Key Files
-- path/to/file.ts - what to focus on
-
-## Guidance
-Use the ui-styling skill to ensure components match our design system.
-Use the xterm-js skill for terminal resize handling.
-When done, use the code-review skill before committing.
+- path/to/file.ts
 
 ## When Done
-bd close ISSUE-ID --reason "done"
+bd close ISSUE-ID --reason \"summary\""
 ```
 
-#### Encourage Parallelization
+#### Notes Structure
 
-For tasks with multiple independent parts, hint at subagent usage:
+| Section | Purpose |
+|---------|---------|
+| Problem | What's wrong (if not clear from title) |
+| Approach | Skill to use, strategy hints |
+| Key Files | Where to focus |
+| When Done | Reminder to close issue |
 
-```markdown
-## Approach
-Use subagents in parallel to scaffold the Dashboard, Settings, and Profile pages.
-Then integrate them with the router.
+Keep notes concise - workers read the issue description too.
+
+#### Parallelization Hints
+
+For multi-part tasks, add to the Approach section:
+
 ```
-
-Good parallelization hints:
-- "Use subagents in parallel to create X, Y, and Z"
-- "Research these files simultaneously using subagents"
-- "Scaffold all components in parallel, then wire them up"
-
-Keep it natural - workers know how to use subagents, they just need the nudge.
-
-#### Store in Issue Notes
-
-```bash
-bd update ISSUE-ID --notes "Fix the pagination bug in useTerminalSessions.ts.
-
-Use the xterm-js skill for terminal integration patterns.
-
-Key files: extension/hooks/useTerminalSessions.ts
-
-When done:
-- Run tests: npm test
-- bd close ISSUE-ID --reason done"
+Use subagents in parallel to scaffold Dashboard, Settings, and Profile pages.
 ```
 
 ### 7. Output Sprint Plan

@@ -52,61 +52,56 @@ curl -s -X POST http://localhost:8129/api/spawn \
   }'
 ```
 
-## Prompts in Beads Issues
+## Prompts: Keep Them Minimal
 
-Store worker prompts in the issue `notes` field:
+The beads issue contains all the context (title, description, notes). The conductor sends the same standard prompt to every worker.
+
+### Standard Prompt
 
 ```bash
-# Add prompt when planning
-bd update ISSUE-ID --notes "Fix the pagination bug in useTerminalSessions.ts around line 200.
-
-Key files: extension/hooks/useTerminalSessions.ts
-
-When done:
-- Run tests: npm test
-- Close: bd close ISSUE-ID --reason done"
-
-# Worker reads prompt
-PROMPT=$(bd show ISSUE-ID --json | jq -r '.[0].notes')
+PROMPT="Complete beads issue ISSUE-ID. Read the issue notes for context. Use subagents in parallel when possible. Load any skills mentioned in the notes."
 ```
 
-### Prompt Guidelines
+The worker will:
+1. Run `bd show ISSUE-ID` to read the full context
+2. Load any skills mentioned in notes
+3. Do the work (using subagents for parallel tasks)
+4. Close the issue
 
-Keep prompts simple - workers are vanilla Claude:
-- **Be explicit** - "Fix X on line Y" not "Can you look at X"
-- **Include key files** - Worker reads these first
-- **Use skill triggers** - Natural language hints for skills
-- **End with completion** - `bd close ISSUE-ID --reason done`
+### Issue Notes Structure
 
-#### Skill Trigger Examples
+Put everything the worker needs in the issue notes during planning:
 
-Use natural language to activate skills:
+```bash
+bd update ISSUE-ID --notes "## Problem
+Description of what needs to be fixed...
 
-| Domain | Trigger Phrase |
-|--------|----------------|
-| Terminal | "Use the xterm-js skill for terminal resize handling" |
-| UI/React | "Use the ui-styling skill to match our design system" |
-| Backend | "Use the backend-development skill for API patterns" |
-| Plugin dev | "Use the plugin-dev skill for manifest validation" |
-| Code review | "Use the code-review skill before committing" |
-| Browser | "Use the automating-browser skill to check for console errors" |
+## Approach
+Use the ui-styling skill for CSS audit.
 
-Example prompt with skill hints:
-```
-Fix the terminal resize bug in Terminal.tsx.
+## Files
+- frontend/src/app/admin/page.tsx
 
-Use the xterm-js skill for terminal integration patterns.
-Key files: extension/components/Terminal.tsx
-
-When done:
-- Use the code-review skill before committing
-- bd close ISSUE-ID --reason done
+## When done
+bd close ISSUE-ID --reason \"summary\""
 ```
 
-Avoid:
-- Step-by-step pipelines (let Claude work naturally)
-- ALL CAPS or aggressive language
-- Skill loading instructions (skills activate on keywords)
+### Finding Skills
+
+Use the skill matcher during planning:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/match-skills.sh --triggers "css theme dashboard"
+# Output: Use the ui-styling skill for UI components and styling patterns.
+```
+
+Add the suggested skill to the issue notes.
+
+### Avoid
+
+- Duplicating issue content in the prompt (it's in beads)
+- Different prompts for different workers (use the standard one)
+- Forgetting to add skill hints to notes during planning
 
 ## Sending Prompts via tmux
 

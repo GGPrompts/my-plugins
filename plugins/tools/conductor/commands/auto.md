@@ -49,8 +49,8 @@ spawn_worker() {
   # Initialize dependencies (prevents workers from wasting time on npm install)
   ${CLAUDE_PLUGIN_ROOT}/scripts/init-worktree.sh "$WORKTREE" --quiet
 
-  # Get prompt from notes
-  local PROMPT=$(bd show "$ISSUE_ID" --json | jq -r '.[0].notes // "Work on issue '"$ISSUE_ID"'. When done: bd close '"$ISSUE_ID"' --reason done"')
+  # Standard prompt - issue notes have the context
+  local PROMPT="Complete beads issue $ISSUE_ID. Read the issue notes for context. Use subagents in parallel when possible. Load any skills mentioned in the notes."
 
   # Spawn terminal
   local TOKEN=$(cat /tmp/tabz-auth-token)
