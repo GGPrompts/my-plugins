@@ -9,69 +9,94 @@ description: "Controls Chrome browser: takes screenshots, clicks buttons, fills 
 
 Control Chrome browser programmatically via the Tabz MCP server. 70 tools for screenshots, interaction, network debugging, and more.
 
-## Tool Discovery (Claude Code)
+## Tool Discovery (MCP-CLI Mode)
 
-Use MCPSearch to load tools before calling them:
+```bash
+# List all tabz tools
+mcp-cli tools tabz
 
-```
-# Search for tools
-MCPSearch with query: "screenshot"
+# Search for specific tools
+mcp-cli tools tabz | grep screenshot
+mcp-cli grep "network"
 
-# Load specific tool
-MCPSearch with query: "select:mcp__tabz__tabz_screenshot"
+# Get tool schema before calling (REQUIRED)
+mcp-cli info tabz/tabz_screenshot
 
-# Then call it
-mcp__tabz__tabz_screenshot
+# Call tool
+mcp-cli call tabz/tabz_screenshot '{}'
 ```
 
 ## Browser Debugging (Common Issues)
 
 ### Check Console Errors
 
-```
-MCPSearch: select:mcp__tabz__tabz_get_console_logs
-mcp__tabz__tabz_get_console_logs with level="error"
+```bash
+mcp-cli info tabz/tabz_get_console_logs
+mcp-cli call tabz/tabz_get_console_logs '{"level": "error"}'
 ```
 
 ### Debug Network/API Issues
 
-```
+```bash
 # 1. Enable capture BEFORE triggering the action
-MCPSearch: select:mcp__tabz__tabz_enable_network_capture
-mcp__tabz__tabz_enable_network_capture
+mcp-cli info tabz/tabz_enable_network_capture
+mcp-cli call tabz/tabz_enable_network_capture '{}'
 
 # 2. Trigger the action (click button, navigate, etc.)
 
-# 3. Get failed requests
-MCPSearch: select:mcp__tabz__tabz_get_network_requests
-mcp__tabz__tabz_get_network_requests with statusFilter="error"
+# 3. Get failed requests (status >= 400)
+mcp-cli info tabz/tabz_get_network_requests
+mcp-cli call tabz/tabz_get_network_requests '{"statusMin": 400}'
 
 # Or filter by URL pattern
-mcp__tabz__tabz_get_network_requests with filter="api.example.com"
+mcp-cli call tabz/tabz_get_network_requests '{"urlPattern": "api/"}'
 ```
 
 ### Screenshot for Visual QA
 
-```
-MCPSearch: select:mcp__tabz__tabz_screenshot
-mcp__tabz__tabz_screenshot
-# Returns file path - use Read tool to view
+```bash
+mcp-cli info tabz/tabz_screenshot
+mcp-cli call tabz/tabz_screenshot '{}'
+# Returns file path - use Read tool to view the image
 ```
 
 ### Check Page State
 
-```
-MCPSearch: select:mcp__tabz__tabz_get_page_info
-mcp__tabz__tabz_get_page_info
+```bash
+mcp-cli info tabz/tabz_get_page_info
+mcp-cli call tabz/tabz_get_page_info '{}'
 # Returns URL, title, loading state
 
-MCPSearch: select:mcp__tabz__tabz_get_element
-mcp__tabz__tabz_get_element with selector="#error-message" includeStyles=true
+mcp-cli info tabz/tabz_get_element
+mcp-cli call tabz/tabz_get_element '{"selector": "#error-message", "includeStyles": true}'
+```
+
+### Performance Profiling
+
+```bash
+mcp-cli info tabz/tabz_profile_performance
+mcp-cli call tabz/tabz_profile_performance '{}'
+# Returns: DOM node count, JS heap size, event listeners, timing metrics
+```
+
+### DOM Tree Inspection
+
+```bash
+mcp-cli info tabz/tabz_get_dom_tree
+mcp-cli call tabz/tabz_get_dom_tree '{"maxDepth": 3}'
+# Or focus on specific element
+mcp-cli call tabz/tabz_get_dom_tree '{"selector": "main", "maxDepth": 5}'
+```
+
+### Code Coverage Analysis
+
+```bash
+mcp-cli info tabz/tabz_get_coverage
+mcp-cli call tabz/tabz_get_coverage '{"type": "js"}'
+# Shows used vs unused bytes per file
 ```
 
 ## Tool Categories
-
-Use `MCPSearch with query: "tabz"` to discover all available tools. Categories:
 
 | Category | Tools | Purpose |
 |----------|-------|---------|
@@ -85,22 +110,23 @@ Use `MCPSearch with query: "tabz"` to discover all available tools. Categories:
 | Downloads | `download_image`, `download_file` | Save files |
 | Network | `enable_network_capture`, `get_network_requests` | Debug APIs |
 | Console | `get_console_logs`, `execute_script` | Debug JS |
+| Performance | `profile_performance`, `get_coverage` | Diagnose slowness |
 | Emulation | `emulate_device`, `emulate_geolocation` | Responsive testing |
 
 ## Tab Groups (Parallel Workers)
 
 When multiple Claude workers run in parallel, each MUST create their own named group:
 
-```
+```bash
 # Create unique group for this worker
-MCPSearch: select:mcp__tabz__tabz_create_group
-mcp__tabz__tabz_create_group with tabIds=[123,456] title="ISSUE-ID: Research" color="blue"
+mcp-cli info tabz/tabz_create_group
+mcp-cli call tabz/tabz_create_group '{"tabIds": [123, 456], "title": "ISSUE-ID: Research", "color": "blue"}'
 
 # Add more tabs later
-mcp__tabz__tabz_add_to_group with groupId=12345 tabIds=[789]
+mcp-cli call tabz/tabz_add_to_group '{"groupId": 12345, "tabIds": [789]}'
 
 # Cleanup when done
-mcp__tabz__tabz_ungroup_tabs with tabIds=[123,456,789]
+mcp-cli call tabz/tabz_ungroup_tabs '{"tabIds": [123, 456, 789]}'
 ```
 
 **Group colors:** grey, blue, red, yellow, green, pink, purple, cyan
@@ -108,38 +134,49 @@ mcp__tabz__tabz_ungroup_tabs with tabIds=[123,456,789]
 ## Quick Patterns
 
 **Screenshot:**
-```
-mcp__tabz__tabz_screenshot
+```bash
+mcp-cli call tabz/tabz_screenshot '{}'
 ```
 
 **Click:**
-```
-mcp__tabz__tabz_click with selector="button.submit"
+```bash
+mcp-cli call tabz/tabz_click '{"selector": "button.submit"}'
 ```
 
 **Fill form:**
-```
-mcp__tabz__tabz_fill with selector="#email" value="test@example.com"
+```bash
+mcp-cli call tabz/tabz_fill '{"selector": "#email", "value": "test@example.com"}'
 ```
 
 **Switch tab:**
-```
-mcp__tabz__tabz_list_tabs  # Get tab IDs (large integers like 1762556601)
-mcp__tabz__tabz_switch_tab with tabId=1762556601
+```bash
+mcp-cli call tabz/tabz_list_tabs '{}'  # Get tab IDs (large integers like 1762556601)
+mcp-cli call tabz/tabz_switch_tab '{"tabId": 1762556601}'
 ```
 
 **TTS notification:**
-```
-mcp__tabz__tabz_speak with text="Done!" priority="high"
+```bash
+mcp-cli call tabz/tabz_speak '{"text": "Done!", "priority": "high"}'
 ```
 
 ## Important Notes
 
-1. **Tab IDs**: Chrome tab IDs are large integers (e.g., `1762556601`), not 1, 2, 3
-2. **Always load tools first**: Use MCPSearch before calling any mcp__tabz__ tool
+1. **Always check schema first**: Run `mcp-cli info tabz/<tool>` before `mcp-cli call`
+2. **Tab IDs**: Chrome tab IDs are large integers (e.g., `1762556601`), not 1, 2, 3
 3. **Network capture**: Enable BEFORE the page makes requests
 4. **Screenshots**: Return file paths - use Read tool to view
 5. **Selectors**: CSS selectors - `#id`, `.class`, `button[type="submit"]`
+6. **JSON quoting**: Use single quotes around JSON, double quotes inside
+
+## Heredoc for Complex JSON
+
+For complex nested JSON, use heredoc to avoid escaping issues:
+
+```bash
+mcp-cli call tabz/tabz_execute_script - <<'EOF'
+{"code": "document.querySelector('button').click()"}
+EOF
+```
 
 ## Resources
 
