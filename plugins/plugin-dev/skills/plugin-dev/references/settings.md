@@ -1,8 +1,3 @@
----
-name: plugin-settings
-description: This skill should be used when the user asks to "add plugin settings", "configure local.md", "store plugin config", or mentions .claude/plugin-name.local.md, settings file, or user configuration.
----
-
 # Plugin Settings
 
 Plugins can store user-configurable settings in `.claude/plugin-name.local.md` files using YAML frontmatter for structured configuration.

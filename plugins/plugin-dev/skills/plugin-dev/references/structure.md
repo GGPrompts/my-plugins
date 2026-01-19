@@ -1,8 +1,3 @@
----
-name: plugin-structure
-description: This skill should be used when the user asks to "create a plugin", "understand plugin structure", "configure plugin.json", "organize plugin directories", or mentions plugin manifest, auto-discovery, or CLAUDE_PLUGIN_ROOT.
----
-
 # Plugin Structure
 
 Claude Code plugins follow a standardized directory structure with automatic component discovery.
