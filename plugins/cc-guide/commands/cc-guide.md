@@ -145,7 +145,7 @@ When responding to Claude Code questions:
 2. **Load relevant references** from the Quick Reference section above
 3. **Provide specific guidance** using information from loaded references
 4. **Include examples** when helpful
-5. **Reference documentation links** from llms.txt when appropriate
+5. **Reference official docs** when appropriate (docs.claude.com/claude-code)
 
 **Loading references:**
 - Read reference files only when needed for the specific question
