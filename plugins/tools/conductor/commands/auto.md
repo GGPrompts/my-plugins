@@ -50,23 +50,32 @@ INITIAL_WAIT=120
 TABZ_API="http://localhost:8129"
 TOKEN=$(cat /tmp/tabz-auth-token)
 
+# Find conductor scripts directory for safe-send-keys.sh
+CONDUCTOR_SCRIPTS=$(find ~/plugins ~/.claude/plugins -name "safe-send-keys.sh" -path "*conductor*" -exec dirname {} \; 2>/dev/null | head -1)
+
 # Pre-flight checks
 check_health() {
   curl -sf "$TABZ_API/api/health" >/dev/null || { echo "TabzChrome not running"; exit 1; }
   bd daemon status >/dev/null 2>&1 || bd daemon start
 }
 
-# Launch tmuxplexer dashboard
+# Launch tmuxplexer dashboard (sets DASHBOARD_SESSION global)
 spawn_dashboard() {
-  curl -s -X POST "$TABZ_API/api/spawn" \
+  local RESP=$(curl -s -X POST "$TABZ_API/api/spawn" \
     -H "Content-Type: application/json" \
     -H "X-Auth-Token: $TOKEN" \
     -d '{
       "name": "Worker Dashboard",
       "workingDir": "/home/marci/projects/tmuxplexer",
       "command": "./tmuxplexer --watcher"
-    }' >/dev/null
-  echo "Dashboard launched"
+    }')
+  DASHBOARD_SESSION=$(echo "$RESP" | jq -r '.terminal.sessionName // empty')
+  if [ -z "$DASHBOARD_SESSION" ]; then
+    # Fallback: find by pattern
+    sleep 2
+    DASHBOARD_SESSION=$(tmux ls 2>/dev/null | grep -o "ctt-worker-dashboard-[a-f0-9]*" | head -1)
+  fi
+  echo "Dashboard launched → ${DASHBOARD_SESSION:-unknown}"
 }
 
 # Get ready tasks (exclude epics)
@@ -140,6 +149,36 @@ get_active_workers() {
   '
 }
 
+# Check dashboard for stuck workers (Awaiting Input, Error)
+check_dashboard_status() {
+  if [ -z "$DASHBOARD_SESSION" ]; then
+    return
+  fi
+
+  local DASHBOARD_STATE=$(tmux capture-pane -t "$DASHBOARD_SESSION" -p 2>/dev/null | tail -20)
+
+  if echo "$DASHBOARD_STATE" | grep -q "Awaiting Input"; then
+    echo "⚠️  WARNING: Worker awaiting input detected!"
+    # Extract which workers are stuck
+    echo "$DASHBOARD_STATE" | grep -B1 "Awaiting Input" | grep "🤖" | while read -r line; do
+      local STUCK_WORKER=$(echo "$line" | grep -o "[A-Za-z0-9_-]*-[a-z0-9]*" | head -1)
+      if [ -n "$STUCK_WORKER" ]; then
+        echo "   → $STUCK_WORKER is stuck awaiting input"
+      fi
+    done
+  fi
+
+  if echo "$DASHBOARD_STATE" | grep -q "Error"; then
+    echo "❌ WARNING: Worker error detected!"
+    echo "$DASHBOARD_STATE" | grep -B1 "Error" | grep "🤖" | while read -r line; do
+      local ERROR_WORKER=$(echo "$line" | grep -o "[A-Za-z0-9_-]*-[a-z0-9]*" | head -1)
+      if [ -n "$ERROR_WORKER" ]; then
+        echo "   → $ERROR_WORKER has an error"
+      fi
+    done
+  fi
+}
+
 # Cleanup a completed worker
 cleanup_worker() {
   local ISSUE_ID="$1"
@@ -187,6 +226,9 @@ while true; do
   WORKERS=$(get_active_workers)
   ACTIVE_COUNT=$(echo "$WORKERS" | grep -c . || echo 0)
   echo "Polling... ($ACTIVE_COUNT active workers)"
+
+  # Check dashboard for stuck workers
+  check_dashboard_status
 
   # Check for completed issues
   for ISSUE_ID in $WORKERS; do
