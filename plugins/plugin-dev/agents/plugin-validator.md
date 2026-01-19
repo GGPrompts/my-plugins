@@ -1,12 +1,14 @@
 ---
 name: plugin-validator
-description: "Validate Claude Code plugin structure, manifests, and references. Use when phrases like 'validate my plugin', 'check plugin structure', or after creating/modifying plugin components."
+description: "Plugin structure validation specialist for Claude Code plugins. Masters manifest syntax validation, directory structure checks, component reference verification, and security audits. Handles standalone plugins, marketplaces, commands, agents, skills, hooks, and MCP configurations. Use PROACTIVELY after creating or modifying plugin components."
 model: sonnet
 tools:
   - Read
   - Grep
   - Glob
   - Bash
+skills:
+  - plugin-dev
 ---
 
 # Plugin Validator Agent

@@ -1,7 +1,9 @@
 ---
 name: backend-expert
-description: "Backend development expert with progressive disclosure. Knows high-level patterns, invokes specific skills (backend-development, databases, better-auth, devops) when detailed knowledge is needed."
+description: "Expert backend architect specializing in scalable API design, database optimization, and authentication systems. Masters Node.js/Python/Go backends, REST/GraphQL/gRPC APIs, PostgreSQL/MongoDB/Redis, OAuth 2.1/JWT auth, and Docker/Kubernetes deployment. Handles schema design, query optimization, security hardening, and CI/CD pipelines. Use PROACTIVELY when creating APIs, database schemas, auth flows, or backend services."
 model: opus
+skills:
+  - backend-development
 ---
 
 # Backend Expert - Progressive Disclosure Agent

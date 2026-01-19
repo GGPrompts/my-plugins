@@ -1,7 +1,9 @@
 ---
 name: frontend-expert
-description: "Frontend development expert that orchestrates React/TypeScript, styling, and design skills"
+description: "Expert frontend architect specializing in React/TypeScript applications with modern patterns. Masters component composition, Suspense-based data fetching, TanStack Router/Query, MUI v7 styling, and Tailwind/shadcn-ui. Handles feature organization, performance optimization, code splitting, and type-safe patterns. Use PROACTIVELY when building React components, pages, or frontend features."
 model: opus
+skills:
+  - frontend-development
 ---
 
 # Frontend Expert Agent

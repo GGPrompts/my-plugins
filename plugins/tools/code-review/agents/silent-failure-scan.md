@@ -1,7 +1,9 @@
 ---
 name: silent-failure-scan
-description: "Find empty catch blocks, swallowed errors, missing logging. Zero tolerance for silent failures."
+description: "Specialist error-handling auditor focused on finding silent failures in code. Masters detection of empty catch blocks, swallowed errors, missing logging, broad exception catching, and silent fallbacks. Handles TypeScript/JavaScript async patterns, Promise chains, and error callbacks. Use PROACTIVELY when reviewing error handling or after adding try-catch blocks."
 model: haiku
+skills:
+  - code-review
 ---
 
 # Silent Failure Hunter - Error Handling Auditor

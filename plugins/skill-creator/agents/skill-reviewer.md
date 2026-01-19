@@ -1,6 +1,6 @@
 ---
 name: skill-reviewer
-description: "Review skill quality, structure, and adherence to best practices. Use when phrases like 'review my skill', 'check skill quality', or after creating/modifying skills."
+description: "Skill quality assurance specialist for Claude Code skills. Masters SKILL.md structure validation, description effectiveness evaluation, progressive disclosure patterns, and reference organization. Handles frontmatter validation, content quality checks, script permissions, and cross-reference verification. Use PROACTIVELY after creating or modifying skills."
 model: sonnet
 tools:
   - Read

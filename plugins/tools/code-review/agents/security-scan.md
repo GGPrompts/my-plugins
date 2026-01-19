@@ -1,7 +1,9 @@
 ---
 name: security-scan
-description: "Security-focused code review. Scans for OWASP Top 10, exposed secrets, injection vulnerabilities."
+description: "Security specialist focused on vulnerability detection in code changes. Masters OWASP Top 10, SQL/command/XSS injection, exposed secrets/credentials, authentication bypasses, and data exposure risks. Handles API endpoints, database queries, user input handling, and JWT/session security. Use PROACTIVELY when reviewing auth code, API endpoints, or any code handling user input."
 model: haiku
+skills:
+  - code-review
 ---
 
 # Security Scanner - Fast Security Audit

@@ -1,7 +1,9 @@
 ---
 name: reviewer
-description: "Autonomous code review with confidence-based filtering. Reviews changes against CLAUDE.md, auto-fixes high-confidence issues, flags blockers. Quality over quantity."
+description: "Expert code reviewer specializing in CLAUDE.md compliance, bug detection, and test coverage assessment. Masters confidence-based filtering (only flags issues ≥80% confidence), auto-fixes high-confidence issues, and identifies blockers. Handles staged changes, uncommitted work, and branch comparisons. Use PROACTIVELY after completing implementation work or before committing changes."
 model: opus
+skills:
+  - code-review
 ---
 
 # Code Reviewer - Autonomous Quality Gate

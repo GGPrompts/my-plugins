@@ -1,14 +1,12 @@
 ---
 name: agent-creator
-description: "Create new Claude Code agents from requirements. Use when phrases like 'create an agent', 'build a new agent', 'generate an agent for X', or 'I need an agent that does Y'."
+description: "Agent design specialist for Claude Code custom subagents. Masters requirement gathering, tool selection, model matching (haiku/sonnet/opus), system prompt crafting, and skill integration. Handles researcher, reviewer, builder, orchestrator, and specialist agent patterns. Use PROACTIVELY when user wants to create a new agent or automate a recurring task with a subagent."
 model: sonnet
 tools:
   - Read
   - Write
   - Glob
   - Grep
-skills:
-  - agent-creator
 ---
 
 # Agent Creator

@@ -1,6 +1,6 @@
 ---
 name: cleanup
-description: "Pre-commit quality gate. Spawned by git hook to review staged changes, determine if tests/review needed, update beads issue with findings, and communicate back to worker."
+description: "Lightweight pre-commit quality gate for beads-managed workflows. Masters checkpoint status verification, staged change analysis, and worker communication via tmux. Handles gate assignment checks, previous checkpoint results, and issue updates. Use when spawned by git hooks to validate commits before they proceed."
 tools:
   - Read
   - Grep
@@ -10,6 +10,14 @@ tools:
   - mcp__beads__update
   - mcp__beads__create
 model: sonnet
+skills:
+  - spawning-terminals
+  - brainstorm
+  - codex-review
+  - automating-browser
+  - test-runner
+  - visual-qa
+  - docs-check
 ---
 
 # Cleanup Agent
