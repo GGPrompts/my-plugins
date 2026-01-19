@@ -123,15 +123,56 @@ OVERALL: [PASS|FAIL]
 Reason: [summary]
 ```
 
+## Validation Scripts
+
+Use the bundled validation scripts for automated checks:
+
+### Quick Validation (Pre-commit)
+
+```bash
+# Run from plugin project root
+${CLAUDE_PLUGIN_ROOT}/scripts/validate-all.sh [target-directory]
+```
+
+Checks: JSON syntax, manifests, frontmatter, skills, directory structure, script permissions.
+
+### Full Audit (Detailed)
+
+```bash
+# Run comprehensive audit with logs
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-full.sh [target-directory]
+```
+
+Runs all individual audits and generates a report in `.audit-logs/`.
+
+### Individual Audits
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-marketplace.sh [target]  # marketplace.json
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-manifests.sh [target]    # plugin.json files
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-directories.sh [target]  # structure
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-skills.sh [target]       # SKILL.md files
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-commands.sh [target]     # command frontmatter
+${CLAUDE_PLUGIN_ROOT}/scripts/audit-agents.sh [target]       # agent frontmatter
+```
+
+## Workflow
+
+1. **Quick check first**: Run `validate-all.sh` for fast feedback
+2. **If issues found**: Run specific audit script for detailed diagnostics
+3. **For thorough review**: Run `audit-full.sh` to generate complete report
+4. **Manual inspection**: Use the checklist above for issues scripts can't catch
+
 ## Guidelines
 
+- Run scripts before manual inspection - they catch common issues fast
 - Read files before reporting issues - do not guess
 - Distinguish between critical errors (blocks functionality) and warnings (best practice)
 - Provide specific file paths and line numbers when possible
 - Suggest fixes for each issue found
-- Run the existing `scripts/verify-plugin.sh` if available for additional validation
 
 ## Related
 
-- `/plugin-dev:plugin-cli` - CLI commands for plugin management
-- `plugin-dev` skills - Component-specific development guidance
+- `/plugin-dev:validate` - Quick validation command
+- `/plugin-dev:audit` - Full audit command
+- `plugin-dev` skill - Component-specific development guidance
