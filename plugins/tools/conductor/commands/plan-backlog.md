@@ -1,5 +1,5 @@
 ---
-description: "AI-assisted backlog grooming: prioritize, add dependencies, draft worker prompts"
+description: "AI-assisted backlog grooming: prioritize, add dependencies, assign quality gates, draft worker prompts"
 ---
 
 # Plan Backlog - AI Scrum Master
@@ -15,6 +15,7 @@ The user adds rough issues to beads. You analyze and organize them:
 - Add dependencies and blockers
 - Group related work
 - Break down epics into subtasks
+- **Assign quality gates** based on issue type, files, and labels
 - **Prepare issue notes** with skill hints and context
 - Organize into parallelizable waves
 
@@ -108,7 +109,100 @@ $SCRIPT --issue ISSUE-ID
 - `--json "text"` - Get structured JSON output
 - `--available-full` - List all available skills with descriptions
 
-### 5. Prepare Issue Notes
+### 5. Assign Quality Gates
+
+Based on issue characteristics, assign appropriate quality gates. The `/conductor:gate-runner` will execute these gates before merging.
+
+#### Gate Types
+
+| Gate | Purpose | Checkpoint Skill |
+|------|---------|-----------------|
+| `codex-review` | Code review via Codex | `/codex-review` |
+| `test-runner` | Run project tests | `/test-runner` |
+| `visual-qa` | Visual/UI verification | `/visual-qa` |
+| `docs-check` | Documentation updates | `/docs-check` |
+| `human` | Manual approval | (requires `bd gate resolve`) |
+
+#### Assignment Heuristics
+
+Analyze each issue and suggest gates based on:
+
+| Indicator | Suggested Gates |
+|-----------|-----------------|
+| **Issue Type** | |
+| Bug fix | `codex-review` |
+| New feature | `codex-review`, `test-runner` |
+| Refactor | `codex-review`, `test-runner` |
+| Chore/config | (none or `codex-review`) |
+| Docs only | (none) |
+| Epic close | `codex-review` |
+| **Files Touched** | |
+| `*.tsx`, `*.jsx`, `*.css`, `*.scss` | `visual-qa` |
+| `*.test.ts`, `*.spec.ts` | `test-runner` |
+| `README.md`, `docs/`, `*.md` | `docs-check` |
+| **Labels** | |
+| `needs-visual`, `ui`, `frontend` | `visual-qa` |
+| `needs-tests`, `testing` | `test-runner` |
+| `needs-review`, `security` | `codex-review` |
+| `needs-docs` | `docs-check` |
+| `needs-manual`, `breaking-change` | `human` |
+
+#### Creating Gates
+
+After determining which gates apply, create them as blockers:
+
+**Using CLI:**
+```bash
+# Create gate issue that blocks the work issue
+bd create "codex-review for ISSUE-ID" --type gate --deps "blocks:ISSUE-ID" --labels codex-review
+
+# Multiple gates
+bd create "test-runner for ISSUE-ID" --type gate --deps "blocks:ISSUE-ID" --labels test-runner
+bd create "visual-qa for ISSUE-ID" --type gate --deps "blocks:ISSUE-ID" --labels visual-qa
+```
+
+**Using MCP:**
+```python
+# Create gate that blocks the issue
+mcp__beads__create(
+  title="codex-review for ISSUE-ID",
+  issue_type="gate",
+  deps=["blocks:ISSUE-ID"],
+  labels=["codex-review"]
+)
+```
+
+#### Presenting Gate Suggestions
+
+When outputting the sprint plan, show suggested gates:
+
+```markdown
+## Issue Analysis
+
+| Issue | Type | Files | Suggested Gates |
+|-------|------|-------|-----------------|
+| bd-xxx | bug | Terminal.tsx | codex-review, visual-qa |
+| bd-yyy | feature | api.js, api.test.js | codex-review, test-runner |
+| bd-zzz | docs | README.md | (none) |
+
+**Create these gates?** [y/N]
+```
+
+#### User Override
+
+Always allow the user to:
+- Add additional gates
+- Remove suggested gates
+- Skip gates entirely for low-risk changes
+
+```markdown
+Would you like to:
+1. Create all suggested gates
+2. Select gates per issue
+3. Skip gate assignment
+```
+
+### 6. Prepare Issue Notes
 
 The conductor sends the same standard prompt to every worker. All context goes in the issue notes/design/acceptance fields.
 
@@ -173,7 +267,7 @@ For multi-part tasks, add to notes:
 Use subagents in parallel to scaffold Dashboard, Settings, and Profile pages.
 ```
 
-### 6. Organize Into Waves
+### 7. Organize Into Waves
 
 Group ready issues for parallel execution:
 
@@ -186,7 +280,7 @@ mcp__beads__ready()
 # Check with mcp__beads__ready() again
 ```
 
-### 7. Output Sprint Plan
+### 8. Output Sprint Plan
 
 Present the organized backlog:
 
