@@ -5,9 +5,42 @@ description: "Spawn and manage terminal tabs via TabzChrome REST API. Use when s
 
 # TabzChrome Terminal Management
 
-Spawn terminals, manage workers, and orchestrate parallel Claude sessions via REST API.
+Spawn terminals, manage workers, and orchestrate parallel Claude sessions via REST API or MCP tools.
 
-## Prerequisites
+## MCP Tools (Preferred)
+
+When TabzChrome MCP server is connected, use these tools instead of raw curl commands:
+
+| Tool | Purpose |
+|------|---------|
+| `tabz_list_profiles` | List terminal profiles (filter by category) |
+| `tabz_list_categories` | List profile categories |
+| `tabz_spawn_profile` | Spawn terminal using a saved profile |
+| `tabz_get_profile` | Get profile details |
+| `tabz_create_profile` | Create a new terminal profile |
+| `tabz_update_profile` | Update an existing profile |
+| `tabz_delete_profile` | Delete a profile |
+| `tabz_list_plugins` | List Claude Code plugins |
+| `tabz_list_skills` | List available skills |
+
+### Profile-Based Spawning with MCP
+
+```python
+# List available AI assistant profiles
+tabz_list_profiles(category="AI Assistants")
+
+# Spawn using a profile with workingDir override
+tabz_spawn_profile(
+    profileId="claude-worker",
+    workingDir="~/projects/myapp/.worktrees/V4V-ct9",
+    name="V4V-ct9"
+)
+
+# Check what skills workers will have
+tabz_list_skills()
+```
+
+## Prerequisites (for REST API)
 
 ```bash
 # Check TabzChrome is running
@@ -57,6 +90,31 @@ curl -X POST http://localhost:8129/api/spawn \
   }"
 ```
 
+### Profile-Based Spawning (Recommended)
+
+Profiles encapsulate command, theme, and settings. Use profiles for consistent worker spawning:
+
+```bash
+# List profiles
+curl -s http://localhost:8129/api/profiles | jq '.profiles[] | {id, name, category}'
+
+# Spawn using a profile via /api/agents
+curl -X POST http://localhost:8129/api/agents \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $TOKEN" \
+  -d '{
+    "profileId": "claude-worker",
+    "name": "V4V-ct9",
+    "workingDir": "~/projects/.worktrees/V4V-ct9"
+  }'
+```
+
+Profile-based spawning inherits:
+- Command (e.g., `claude --dangerously-skip-permissions`)
+- Theme/colors
+- Font settings
+- Environment variables
+
 ### Spawn Parameters
 
 | Param | Required | Default | Description |
@@ -64,7 +122,7 @@ curl -X POST http://localhost:8129/api/spawn \
 | `name` | No | "Claude Terminal" | Display name (use issue ID for workers) |
 | `workingDir` | No | $HOME | Starting directory |
 | `command` | No | - | Command to auto-execute after spawn |
-| `profileId` | No | default | Terminal profile for appearance |
+| `profileId` | No | default | Terminal profile for appearance and command |
 
 ### Response
 

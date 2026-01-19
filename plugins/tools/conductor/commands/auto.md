@@ -6,6 +6,19 @@ description: "Autonomous worker loop - spawns workers, polls beads, respawns unt
 
 Spawns workers for ready issues, polls beads for updates, spawns new workers as issues become unblocked, cleans up completed work. Runs until backlog is empty.
 
+## MCP Tools Available
+
+When TabzChrome MCP server is connected, use these tools for worker management:
+
+| Tool | Purpose |
+|------|---------|
+| `tabz_list_profiles` | Discover worker profiles (e.g., "claude-worker") |
+| `tabz_spawn_profile` | Spawn workers using preconfigured profiles |
+| `tabz_list_plugins` | Check what plugins workers will have access to |
+| `tabz_list_skills` | Discover skills available to workers |
+
+**Profile-based spawning is recommended** - profiles encapsulate command, theme, and plugin settings.
+
 ## How It Works
 
 1. Check TabzChrome health

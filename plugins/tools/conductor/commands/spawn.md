@@ -6,6 +6,21 @@ description: "Spawn Claude workers in isolated worktrees via TabzChrome"
 
 Spawn Claude terminals in isolated git worktrees to work on beads issues in parallel.
 
+## MCP Tools Available
+
+When TabzChrome MCP server is connected, these tools are available for terminal management:
+
+| Tool | Purpose |
+|------|---------|
+| `tabz_list_profiles` | List terminal profiles (filter by category) |
+| `tabz_list_categories` | List profile categories |
+| `tabz_spawn_profile` | Spawn terminal using a saved profile |
+| `tabz_get_profile` | Get profile details |
+| `tabz_list_plugins` | List Claude Code plugins |
+| `tabz_list_skills` | List available skills |
+
+**Prefer MCP tools when available** - they handle auth automatically and are more reliable than raw curl commands.
+
 ## Prerequisites
 
 ### Check TabzChrome Health
@@ -61,6 +76,48 @@ tmux send-keys -t "$SESSION" -l "$PROMPT"
 sleep 1
 tmux send-keys -t "$SESSION" Enter
 ```
+
+## Profile-Based Spawning (Recommended)
+
+**Use profiles for consistent terminal appearance and behavior.**
+
+### Using MCP Tools
+
+```python
+# List available AI assistant profiles
+tabz_list_profiles(category="AI Assistants")
+
+# Spawn using a profile with workingDir override
+tabz_spawn_profile(
+    profileId="claude-worker",
+    workingDir="~/projects/myapp/.worktrees/V4V-ct9",
+    name="V4V-ct9"
+)
+```
+
+### Using REST API
+
+```bash
+# List profiles
+curl -s http://localhost:8129/api/profiles | jq '.profiles[] | select(.category == "AI Assistants")'
+
+# Spawn with profileId
+TOKEN=$(cat /tmp/tabz-auth-token)
+curl -X POST http://localhost:8129/api/agents \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $TOKEN" \
+  -d '{
+    "profileId": "claude-worker",
+    "name": "V4V-ct9",
+    "workingDir": "~/projects/.worktrees/V4V-ct9"
+  }'
+```
+
+Profile-based spawning inherits:
+- Command (e.g., `claude --dangerously-skip-permissions`)
+- Theme/colors
+- Font settings
+- Plugin directories
 
 ## Naming Convention
 
