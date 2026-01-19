@@ -307,32 +307,64 @@ main() {
 main "$@"
 ```
 
+## Two-Phase Quality System
+
+Quality checking is split into two phases:
+
+### Phase 1: Pre-commit (Cleanup Agent)
+
+The `cleanup` agent is a **lightweight pre-commit check** that:
+- Verifies gates are assigned to the issue
+- Checks if any `.checkpoints/*.json` results exist from previous runs
+- If checkpoints exist and failed → blocks commit (worker must fix first)
+- Does NOT run gates itself - just checks status
+
+**Cleanup does NOT:**
+- Run code review (gate-runner does that)
+- Run tests (gate-runner does that)
+- Do deep analysis
+
+### Phase 2: Post-close (Gate Runner)
+
+The `gate-runner` handles the actual quality gates after worker closes:
+- Spawns checkpoint workers (`/codex-review`, `/test-runner`, etc.)
+- Reads `.checkpoints/{type}.json` results
+- Passes → merge to main
+- Fails → reopens issue with reason
+
+### Full Flow
+
+```
+┌─────────────────┐     ┌──────────────┐     ┌─────────────┐     ┌─────────────┐
+│  /conductor:auto │ ──→ │ Worker works │ ──→ │   Cleanup   │ ──→ │ Worker closes│
+│  spawns workers │     │  on issue    │     │ (pre-commit)│     │    issue     │
+└─────────────────┘     └──────────────┘     └─────────────┘     └─────────────┘
+                                                    │                    │
+                                              ┌─────┴─────┐              │
+                                              │           │              │
+                                        ┌─────▼────┐ ┌────▼────┐   ┌─────▼─────┐
+                                        │  PASS    │ │NEEDS_WORK│   │ Gate Runner│
+                                        │(continue)│ │(fix+retry)│  │ runs gates │
+                                        └──────────┘ └──────────┘   └─────┬─────┘
+                                                                          │
+                                                    ┌─────────────────────┴───────────────────┐
+                                                    │                                         │
+                                              ┌─────▼─────┐                           ┌───────▼───────┐
+                                              │Gates PASS │                           │ Gates FAIL    │
+                                              │→ Merge    │                           │ → Reopen      │
+                                              └───────────┘                           └───────────────┘
+```
+
 ## Integration with /conductor:auto
 
 The gate-runner can run alongside `/conductor:auto`:
 
 1. **auto** spawns workers for ready issues
-2. Workers complete work and close issues
-3. **auto** merges completed work
-4. Before merge, **gate-runner** runs quality gates
+2. Workers complete work and commit (cleanup agent does quick check)
+3. Workers close issues
+4. **gate-runner** runs full quality gates
 5. Gates pass → merge proceeds
 6. Gates fail → issue reopened
-
-### Modified Flow
-
-```
-┌─────────────────┐     ┌──────────────┐     ┌─────────────┐
-│  /conductor:auto │ ──→ │ Worker closes│ ──→ │ Gate Runner │
-│  spawns workers │     │    issue     │     │ runs gates  │
-└─────────────────┘     └──────────────┘     └─────────────┘
-                                                    │
-                              ┌─────────────────────┴───────────────────┐
-                              │                                         │
-                        ┌─────▼─────┐                           ┌───────▼───────┐
-                        │Gates PASS │                           │ Gates FAIL    │
-                        │→ Merge    │                           │ → Reopen      │
-                        └───────────┘                           └───────────────┘
-```
 
 ## Checkpoint Result Format
 
