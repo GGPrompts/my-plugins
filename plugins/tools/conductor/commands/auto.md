@@ -77,9 +77,18 @@ spawn_worker() {
   # Create worktree
   git worktree add "$WORKTREE" -b "feature/$ISSUE_ID" 2>/dev/null || return 1
 
-  # Initialize dependencies
-  INIT_SCRIPT=$(find ~/.claude/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
-  [ -n "$INIT_SCRIPT" ] && $INIT_SCRIPT "$WORKTREE" --quiet 2>/dev/null
+  # Initialize dependencies SYNCHRONOUSLY (so they're ready before Claude starts)
+  INIT_SCRIPT=$(find ~/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
+  if [ -z "$INIT_SCRIPT" ]; then
+    INIT_SCRIPT=$(find ~/.claude/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
+  fi
+  if [ -n "$INIT_SCRIPT" ]; then
+    echo "Initializing $ISSUE_ID dependencies..."
+    $INIT_SCRIPT "$WORKTREE" 2>&1 | tail -5
+  fi
+
+  # Plugin directories for Claude
+  PLUGIN_DIRS="--plugin-dir $HOME/.claude/plugins/marketplaces --plugin-dir $HOME/plugins/my-plugins"
 
   # Spawn terminal with issue ID as name
   local RESP=$(curl -s -X POST "$TABZ_API/api/spawn" \
@@ -88,16 +97,22 @@ spawn_worker() {
     -d "{
       \"name\": \"$ISSUE_ID\",
       \"workingDir\": \"$WORKDIR/$WORKTREE\",
-      \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions\"
+      \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions $PLUGIN_DIRS\"
     }")
 
   local SESSION=$(echo "$RESP" | jq -r '.terminal.sessionName')
 
-  # Send minimal prompt
-  sleep 2
-  local PROMPT="Complete beads issue $ISSUE_ID. Run bd show $ISSUE_ID for context."
+  # Wait for Claude to fully initialize before sending prompt
+  echo "Waiting for Claude to initialize..."
+  sleep 8
+
+  # Get session ID (may differ from sessionName)
+  SESSION=$(curl -s "$TABZ_API/api/agents" | jq -r --arg id "$ISSUE_ID" '.data[] | select(.name == $id) | .id')
+
+  # Send prompt - use CLI not MCP, don't run bd sync (fails in worktrees)
+  local PROMPT="Complete beads issue $ISSUE_ID. Use CLI commands (bd show, bd update, bd close) not MCP tools. Do NOT run bd sync - just commit and the conductor will merge. Run: bd show $ISSUE_ID --json"
   tmux send-keys -t "$SESSION" -l "$PROMPT"
-  sleep 0.5
+  sleep 1
   tmux send-keys -t "$SESSION" Enter
 
   echo "Spawned $ISSUE_ID → $SESSION"
@@ -197,13 +212,18 @@ done
 
 Workers follow the standard beads workflow:
 
-1. `bd show ISSUE_ID` - Read context
+1. `bd show ISSUE_ID --json` - Read context (use CLI, not MCP)
 2. `bd update ID --status in_progress` - Claim it
 3. Do the work
-4. `bd close ID --reason "done"` - Complete
-5. `bd sync` - Sync changes
+4. `git add -A && git commit -m "message (ISSUE_ID)"` - Commit changes
+5. `bd close ID --reason "done"` - Complete
 
-The conductor detects closed status via polling and handles cleanup.
+**Important for worktrees:**
+- Use `bd` CLI commands, NOT MCP tools (MCP has schema issues in worktrees)
+- Do NOT run `bd sync` - it fails in worktrees due to git status issues
+- Just commit your changes - the conductor will merge and push
+
+The conductor detects closed status via polling and handles merge + cleanup.
 
 ## TabzChrome API Usage
 
@@ -258,3 +278,6 @@ The tmuxplexer `--watcher` mode shows:
 - Kills terminals via API after merge
 - Launches dashboard for visual monitoring
 - Workers must close issues for detection
+- **Dependencies are installed synchronously** before Claude starts (npm, pip, etc.)
+- **Plugin directories are passed** via `--plugin-dir` flag
+- Workers use CLI (`bd`) not MCP to avoid schema validation issues

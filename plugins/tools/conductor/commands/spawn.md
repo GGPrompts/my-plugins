@@ -29,12 +29,15 @@ WORKDIR=$(pwd)
 # 1. Create worktree
 git worktree add ".worktrees/$ISSUE_ID" -b "feature/$ISSUE_ID"
 
-# 2. Initialize dependencies (prevents worker from wasting time)
-# For conductor plugin path, use absolute path or find it
-INIT_SCRIPT="/home/marci/.claude/plugins/cache/my-plugins/conductor/*/scripts/init-worktree.sh"
-$INIT_SCRIPT ".worktrees/$ISSUE_ID" --quiet 2>/dev/null || true
+# 2. Initialize dependencies SYNCHRONOUSLY (prevents worker from wasting time)
+INIT_SCRIPT=$(find ~/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
+[ -z "$INIT_SCRIPT" ] && INIT_SCRIPT=$(find ~/.claude/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
+$INIT_SCRIPT ".worktrees/$ISSUE_ID" 2>&1 | tail -5
 
-# 3. Spawn terminal - use issue ID as name for easy lookup
+# 3. Plugin directories for Claude
+PLUGIN_DIRS="--plugin-dir $HOME/.claude/plugins/marketplaces --plugin-dir $HOME/plugins/my-plugins"
+
+# 4. Spawn terminal - use issue ID as name for easy lookup
 TOKEN=$(cat /tmp/tabz-auth-token)
 RESP=$(curl -s -X POST http://localhost:8129/api/spawn \
   -H "Content-Type: application/json" \
@@ -42,18 +45,20 @@ RESP=$(curl -s -X POST http://localhost:8129/api/spawn \
   -d "{
     \"name\": \"$ISSUE_ID\",
     \"workingDir\": \"$WORKDIR/.worktrees/$ISSUE_ID\",
-    \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions\"
+    \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions $PLUGIN_DIRS\"
   }")
 
-# 4. Get session name from response
-SESSION=$(echo "$RESP" | jq -r '.terminal.sessionName')
-echo "Spawned $ISSUE_ID in session $SESSION"
+echo "Spawned, waiting for Claude to initialize..."
+sleep 8
 
-# 5. Send minimal prompt (issue notes have all context)
-sleep 2
-PROMPT="Complete beads issue $ISSUE_ID. Read bd show $ISSUE_ID for context."
+# 5. Get session ID from API (more reliable than response)
+SESSION=$(curl -s http://localhost:8129/api/agents | jq -r --arg id "$ISSUE_ID" '.data[] | select(.name == $id) | .id')
+echo "Session: $SESSION"
+
+# 6. Send prompt - use CLI not MCP, don't run bd sync
+PROMPT="Complete beads issue $ISSUE_ID. Use CLI (bd show, bd update, bd close) not MCP. Do NOT run bd sync. Run: bd show $ISSUE_ID --json"
 tmux send-keys -t "$SESSION" -l "$PROMPT"
-sleep 0.5
+sleep 1
 tmux send-keys -t "$SESSION" Enter
 ```
 
@@ -147,14 +152,20 @@ The dashboard shows:
 The beads issue contains all context. Send a simple prompt:
 
 ```bash
-PROMPT="Complete beads issue $ISSUE_ID. Read bd show $ISSUE_ID for context."
+PROMPT="Complete beads issue $ISSUE_ID. Use CLI (bd show, bd update, bd close) not MCP. Do NOT run bd sync. Run: bd show $ISSUE_ID --json"
 ```
 
 The worker will:
-1. Run `bd show ISSUE-ID` to read full context
+1. Run `bd show ISSUE-ID --json` to read full context (CLI, not MCP)
 2. Load any skills mentioned in notes
 3. Do the work
-4. Close the issue with `bd close ISSUE-ID --reason "done"`
+4. Commit changes with `git commit`
+5. Close the issue with `bd close ISSUE-ID --reason "done"`
+
+**Important for worktrees:**
+- Use `bd` CLI commands, NOT MCP tools (MCP has schema validation issues)
+- Do NOT run `bd sync` - it fails in worktrees due to git status issues
+- Just commit - the conductor will merge and push after worker completes
 
 ### Issue Notes Structure
 
@@ -276,6 +287,9 @@ wait
 
 - **Name terminals with issue ID** for easy lookup via API
 - Create worktrees BEFORE spawning
-- Initialize dependencies BEFORE spawning to avoid worker delays
+- Initialize dependencies SYNCHRONOUSLY before spawning (not in background)
 - Use `BEADS_NO_DAEMON=1` in worker command (worktrees share DB)
-- Workers are vanilla Claude - they use beads naturally
+- Pass `--plugin-dir` flags so workers have access to plugins
+- Workers use CLI (`bd`) not MCP to avoid schema validation issues
+- Workers should NOT run `bd sync` - conductor handles merge + push
+- Wait 8+ seconds before sending prompt for Claude to fully initialize
