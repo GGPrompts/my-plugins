@@ -135,11 +135,11 @@
       "keywords": ["mcp", "server", "api", "integration", "fastmcp", "sdk"]
     },
     {
-      "name": "claude-code",
+      "name": "cc-guide",
       "description": "Claude Code expert - features, setup, slash commands, MCP, hooks, plugins, IDE integration",
-      "source": "./plugins/claude-code",
+      "source": "./plugins/cc-guide",
       "category": "meta",
-      "keywords": ["claude", "code", "features", "setup", "hooks", "ide", "enterprise"]
+      "keywords": ["guide", "features", "setup", "hooks", "ide", "enterprise", "help"]
     },
     {
       "name": "context-engineering",

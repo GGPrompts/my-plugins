@@ -1,5 +1,5 @@
 {
-  "name": "claude-code",
+  "name": "cc-guide",
   "version": "1.0.0",
   "description": "Claude Code expert - features, setup, slash commands, MCP, hooks, plugins, IDE integration"
 }
