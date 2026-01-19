@@ -17,7 +17,7 @@ With multiple token sources, route tasks to the most efficient model.
 
 ```bash
 # Spawn worker with specific model
-claude --model haiku --dangerously-skip-permissions
+claude --model haiku
 
 # Or in agent frontmatter
 model: haiku
@@ -58,7 +58,7 @@ Popular local models for coding:
 ```bash
 # Haiku for exploration
 curl -X POST http://localhost:8129/api/spawn \
-  -d '{"command": "claude --model haiku --dangerously-skip-permissions"}'
+  -d '{"command": "claude --model haiku"}'
 
 # Use brainstorm agent for brainstorming
 claude --agent conductor:brainstorm

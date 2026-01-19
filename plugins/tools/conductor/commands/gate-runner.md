@@ -111,7 +111,7 @@ spawn_checkpoint() {
     -d "{
       \"name\": \"$TERM_NAME\",
       \"workingDir\": \"$WORKTREE\",
-      \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions $PLUGIN_DIRS\"
+      \"command\": \"BEADS_NO_DAEMON=1 claude $PLUGIN_DIRS\"
     }")
 
   echo "Spawned checkpoint $TERM_NAME"

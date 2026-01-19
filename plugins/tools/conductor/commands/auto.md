@@ -80,7 +80,8 @@ spawn_dashboard() {
 
 # Get ready tasks (exclude epics)
 get_ready_tasks() {
-  bd ready --json | jq -r '.[] | select(.issue_type != "epic") | .id'
+  # Only get issues with 'ready' label (backlog issues without prompts lack this label)
+  bd ready --label ready --json | jq -r '.[] | select(.issue_type != "epic") | .id'
 }
 
 # Check if issue is already being worked (by terminal name)
@@ -119,7 +120,7 @@ spawn_worker() {
     -d "{
       \"name\": \"$ISSUE_ID\",
       \"workingDir\": \"$WORKDIR/$WORKTREE\",
-      \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions $PLUGIN_DIRS\"
+      \"command\": \"BEADS_NO_DAEMON=1 claude $PLUGIN_DIRS\"
     }")
 
   local SESSION=$(echo "$RESP" | jq -r '.terminal.sessionName')
@@ -186,28 +187,6 @@ check_dashboard_status() {
   fi
 }
 
-# Cleanup a completed worker
-cleanup_worker() {
-  local ISSUE_ID="$1"
-
-  # Get session ID by name
-  local SESSION=$(curl -s "$TABZ_API/api/agents" | jq -r --arg id "$ISSUE_ID" \
-    '.data[] | select(.name == $id) | .id')
-
-  # Kill terminal via API
-  [ -n "$SESSION" ] && curl -s -X DELETE "$TABZ_API/api/agents/$SESSION" \
-    -H "X-Auth-Token: $TOKEN" >/dev/null
-
-  # Merge changes
-  git merge "feature/$ISSUE_ID" --no-edit 2>/dev/null || true
-
-  # Remove worktree
-  git worktree remove ".worktrees/$ISSUE_ID" --force 2>/dev/null || true
-  git branch -d "feature/$ISSUE_ID" 2>/dev/null || true
-
-  echo "Cleaned up $ISSUE_ID"
-}
-
 # Main
 check_health
 spawn_dashboard
@@ -237,12 +216,20 @@ while true; do
   # Check dashboard for stuck workers
   check_dashboard_status
 
-  # Check for completed issues
+  # Check for completed issues and spawn cleanup
   for ISSUE_ID in $WORKERS; do
     STATUS=$(bd show "$ISSUE_ID" --json 2>/dev/null | jq -r '.[0].status // "unknown"')
     if [ "$STATUS" = "closed" ]; then
-      echo "Issue $ISSUE_ID completed!"
-      cleanup_worker "$ISSUE_ID"
+      echo "Issue $ISSUE_ID completed! Spawning cleanup..."
+      # Spawn /conductor:worker-done instead of inline cleanup
+      curl -s -X POST "$TABZ_API/api/spawn" \
+        -H "Content-Type: application/json" \
+        -H "X-Auth-Token: $TOKEN" \
+        -d "{
+          \"name\": \"cleanup-$ISSUE_ID\",
+          \"workingDir\": \"$(pwd)\",
+          \"command\": \"claude -p '/conductor:worker-done $ISSUE_ID'\"
+        }" >/dev/null
     fi
   done
 

@@ -53,7 +53,7 @@ CLEANUP_RESULT=$(ISSUE_ID="$ISSUE_ID" \
   WORKTREE_PATH="$WORKTREE_PATH" \
   claude --agent conductor:cleanup \
     --print \
-    --dangerously-skip-permissions \
+    
     "Review staged changes for issue $ISSUE_ID.
 
 ## Context

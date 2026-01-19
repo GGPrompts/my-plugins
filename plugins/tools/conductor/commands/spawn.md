@@ -63,7 +63,7 @@ RESP=$(curl -s -X POST http://localhost:8129/api/spawn \
   -d "{
     \"name\": \"$ISSUE_ID\",
     \"workingDir\": \"$WORKDIR/.worktrees/$ISSUE_ID\",
-    \"command\": \"BEADS_NO_DAEMON=1 claude --dangerously-skip-permissions $PLUGIN_DIRS\"
+    \"command\": \"BEADS_NO_DAEMON=1 claude $PLUGIN_DIRS\"
   }")
 
 echo "Spawned, waiting for Claude to initialize..."
@@ -115,7 +115,7 @@ curl -X POST http://localhost:8129/api/agents \
 ```
 
 Profile-based spawning inherits:
-- Command (e.g., `claude --dangerously-skip-permissions`)
+- Command (e.g., `claude`)
 - Theme/colors
 - Font settings
 - Plugin directories

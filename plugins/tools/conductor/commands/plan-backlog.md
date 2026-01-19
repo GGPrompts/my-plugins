@@ -202,9 +202,22 @@ Would you like to:
 3. Skip gate assignment
 ```
 
-### 6. Prepare Issue Notes
+### 6. Prepare Issue Notes & Mark Ready
 
 The conductor sends the same standard prompt to every worker. All context goes in the issue notes/design/acceptance fields.
+
+**Important:** After drafting the prompt/notes, add the `ready` label to mark the issue as ready for workers:
+
+```bash
+bd label add ISSUE-ID ready
+```
+
+Or via MCP:
+```python
+mcp__beads__update(issue_id="ISSUE-ID", add_labels=["ready"])
+```
+
+Issues without the `ready` label are considered "backlog" - they have been created but not yet planned/drafted. The `/conductor:auto` command only picks up issues with the `ready` label.
 
 #### Update Issue with Context
 
