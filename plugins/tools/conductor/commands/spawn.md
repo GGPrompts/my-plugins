@@ -49,6 +49,9 @@ INIT_SCRIPT=$(find ~/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev
 [ -z "$INIT_SCRIPT" ] && INIT_SCRIPT=$(find ~/.claude/plugins -name "init-worktree.sh" -path "*conductor*" 2>/dev/null | head -1)
 $INIT_SCRIPT ".worktrees/$ISSUE_ID" 2>&1 | tail -5
 
+# 2b. Find safe-send-keys.sh for reliable prompt delivery
+SAFE_SEND_KEYS=$(find ~/plugins ~/.claude/plugins -name "safe-send-keys.sh" -path "*conductor*" 2>/dev/null | head -1)
+
 # 3. Plugin directories for Claude
 PLUGIN_DIRS="--plugin-dir $HOME/.claude/plugins/marketplaces --plugin-dir $HOME/plugins/my-plugins"
 
@@ -70,11 +73,9 @@ sleep 8
 SESSION=$(curl -s http://localhost:8129/api/agents | jq -r --arg id "$ISSUE_ID" '.data[] | select(.name == $id) | .id')
 echo "Session: $SESSION"
 
-# 6. Send prompt - use CLI not MCP, don't run bd sync
-PROMPT="Complete beads issue $ISSUE_ID. Use CLI (bd show, bd update, bd close) not MCP. Do NOT run bd sync. Run: bd show $ISSUE_ID --json"
-tmux send-keys -t "$SESSION" -l "$PROMPT"
-sleep 1
-tmux send-keys -t "$SESSION" Enter
+# 6. Send prompt (use safe-send-keys.sh for reliable delivery)
+PROMPT="Complete beads issue $ISSUE_ID. Run: bd show $ISSUE_ID --json"
+"$SAFE_SEND_KEYS" "$SESSION" "$PROMPT"
 ```
 
 ## Profile-Based Spawning (Recommended)
@@ -209,21 +210,16 @@ The dashboard shows:
 The beads issue contains all context. Send a simple prompt:
 
 ```bash
-PROMPT="Complete beads issue $ISSUE_ID. Use CLI (bd show, bd update, bd close) not MCP. Do NOT run bd sync. Run: bd show $ISSUE_ID --json"
+PROMPT="Complete beads issue $ISSUE_ID. Run: bd show $ISSUE_ID --json"
 ```
 
-The worker will:
-1. Run `bd show ISSUE-ID --json` to read full context (CLI, not MCP)
-2. Load any skills mentioned in notes
-3. Do the work
-4. Commit changes with `git commit`
-5. Write handoff notes with `bd update` (see [handoff-format.md](../references/handoff-format.md))
-6. Close the issue with `bd close ISSUE-ID --reason "done"`
-
-**Important for worktrees:**
-- Use `bd` CLI commands, NOT MCP tools (MCP has schema validation issues)
-- Do NOT run `bd sync` - it fails in worktrees due to git status issues
-- Just commit - the conductor will merge and push after worker completes
+The worker will follow PRIME.md instructions:
+1. Read issue context with `bd show` or MCP tools
+2. Do the work
+3. Commit changes with issue ID in message
+4. Add retro notes
+5. Close the issue
+6. Run `bd sync` and push branch
 
 ### Issue Notes Structure
 
@@ -248,10 +244,8 @@ bd close ISSUE-ID --reason \"summary\""
 ```bash
 SESSION="ctt-V4V-ct9-abc123"
 
-# Send prompt (literal mode preserves formatting)
-tmux send-keys -t "$SESSION" -l "$PROMPT"
-sleep 0.5
-tmux send-keys -t "$SESSION" Enter
+# Send prompt (use safe-send-keys.sh for reliable delivery)
+"$SAFE_SEND_KEYS" "$SESSION" "$PROMPT"
 
 # Verify delivery
 tmux capture-pane -t "$SESSION" -p | tail -5
@@ -280,9 +274,7 @@ The `--watcher` mode shows real-time status:
 
 ```bash
 # If worker finished but didn't close issue
-tmux send-keys -t "$SESSION" -l "Close the issue: bd close ISSUE-ID --reason done"
-sleep 0.5
-tmux send-keys -t "$SESSION" Enter
+"$SAFE_SEND_KEYS" "$SESSION" "Close the issue: bd close ISSUE-ID --reason done"
 ```
 
 ## Cleanup
@@ -348,6 +340,5 @@ wait
 - Initialize dependencies SYNCHRONOUSLY before spawning (not in background)
 - Use `BEADS_NO_DAEMON=1` in worker command (worktrees share DB)
 - Pass `--plugin-dir` flags so workers have access to plugins
-- Workers use CLI (`bd`) not MCP to avoid schema validation issues
-- Workers should NOT run `bd sync` - conductor handles merge + push
+- Workers follow PRIME.md - MCP tools and `bd sync` work in worktrees
 - Wait 8+ seconds before sending prompt for Claude to fully initialize

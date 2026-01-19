@@ -183,11 +183,12 @@ SESSION="ctt-V4V-ct9-abc123"
 # Wait for Claude to initialize (8+ seconds after spawn)
 sleep 8
 
-# Send prompt (literal mode preserves formatting)
+# Find safe-send-keys.sh for reliable prompt delivery
+SAFE_SEND_KEYS=$(find ~/plugins ~/.claude/plugins -name "safe-send-keys.sh" -path "*conductor*" 2>/dev/null | head -1)
+
+# Send prompt
 PROMPT="Complete beads issue V4V-ct9. Run: bd show V4V-ct9 --json"
-tmux send-keys -t "$SESSION" -l "$PROMPT"
-sleep 0.5
-tmux send-keys -t "$SESSION" Enter
+"$SAFE_SEND_KEYS" "$SESSION" "$PROMPT"
 
 # Verify delivery
 tmux capture-pane -t "$SESSION" -p | tail -5
@@ -246,11 +247,12 @@ sleep 8
 # 4. Get session ID
 SESSION=$(curl -s http://localhost:8129/api/agents | jq -r --arg id "$ISSUE_ID" '.data[] | select(.name == $id) | .id')
 
-# 5. Send prompt
-PROMPT="Complete beads issue $ISSUE_ID. Use CLI (bd show, bd update, bd close) not MCP. Do NOT run bd sync. Run: bd show $ISSUE_ID --json"
-tmux send-keys -t "$SESSION" -l "$PROMPT"
-sleep 0.5
-tmux send-keys -t "$SESSION" Enter
+# 5. Find safe-send-keys.sh
+SAFE_SEND_KEYS=$(find ~/plugins ~/.claude/plugins -name "safe-send-keys.sh" -path "*conductor*" 2>/dev/null | head -1)
+
+# 6. Send prompt
+PROMPT="Complete beads issue $ISSUE_ID. Run: bd show $ISSUE_ID --json"
+"$SAFE_SEND_KEYS" "$SESSION" "$PROMPT"
 ```
 
 ### Cleanup Worktree
@@ -296,5 +298,4 @@ curl -s -X POST http://localhost:8129/api/spawn \
 3. **Use `BEADS_NO_DAEMON=1`** in worker command (worktrees share DB)
 4. **Pass `--plugin-dir` flags** so workers have plugins
 5. **Wait 8+ seconds** before sending prompt for Claude to initialize
-6. **Workers use CLI (`bd`)** not MCP for beads operations
-7. **Workers should NOT run `bd sync`** - conductor handles merge + push
+6. **Workers follow PRIME.md** - MCP tools and bd sync work in worktrees

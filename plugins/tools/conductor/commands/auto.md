@@ -131,8 +131,8 @@ spawn_worker() {
   # Get session ID (may differ from sessionName)
   SESSION=$(curl -s "$TABZ_API/api/agents" | jq -r --arg id "$ISSUE_ID" '.data[] | select(.name == $id) | .id')
 
-  # Send prompt - use CLI not MCP, don't run bd sync (fails in worktrees)
-  local PROMPT="Complete beads issue $ISSUE_ID. Use CLI commands (bd show, bd update, bd close) not MCP tools. Do NOT run bd sync - just commit and the conductor will merge. Run: bd show $ISSUE_ID --json"
+  # Send prompt - worker follows PRIME.md
+  local PROMPT="Complete beads issue $ISSUE_ID. Run: bd show $ISSUE_ID --json"
 
   # Use safe-send-keys.sh for reliable prompt delivery (handles long prompts)
   if [ -n "$CONDUCTOR_SCRIPTS" ] && [ -x "$CONDUCTOR_SCRIPTS/safe-send-keys.sh" ]; then
@@ -272,18 +272,15 @@ done
 
 ## What Workers Should Do
 
-Workers follow the standard beads workflow:
+Workers follow PRIME.md instructions (injected via beads hook):
 
-1. `bd show ISSUE_ID --json` - Read context (use CLI, not MCP)
-2. `bd update ID --status in_progress` - Claim it
+1. Read issue context with `bd show` or MCP tools
+2. Claim the issue (status = in_progress)
 3. Do the work
-4. `git add -A && git commit -m "message (ISSUE_ID)"` - Commit changes
-5. `bd close ID --reason "done"` - Complete
-
-**Important for worktrees:**
-- Use `bd` CLI commands, NOT MCP tools (MCP has schema issues in worktrees)
-- Do NOT run `bd sync` - it fails in worktrees due to git status issues
-- Just commit your changes - the conductor will merge and push
+4. Commit changes with issue ID in message
+5. Add retro notes
+6. Close the issue
+7. Run `bd sync` and push branch
 
 The conductor detects closed status via polling and handles merge + cleanup.
 
@@ -342,4 +339,4 @@ The tmuxplexer `--watcher` mode shows:
 - Workers must close issues for detection
 - **Dependencies are installed synchronously** before Claude starts (npm, pip, etc.)
 - **Plugin directories are passed** via `--plugin-dir` flag
-- Workers use CLI (`bd`) not MCP to avoid schema validation issues
+- Workers follow PRIME.md - MCP tools and `bd sync` work in worktrees

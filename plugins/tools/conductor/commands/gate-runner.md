@@ -48,6 +48,10 @@ Run once to process all pending gates:
 TABZ_API="http://localhost:8129"
 TOKEN=$(cat /tmp/tabz-auth-token)
 POLL_INTERVAL=15
+
+# Find safe-send-keys.sh
+CONDUCTOR_SCRIPTS=$(find ~/plugins ~/.claude/plugins -name "safe-send-keys.sh" -path "*conductor*" -exec dirname {} \; 2>/dev/null | head -1)
+SAFE_SEND_KEYS="$CONDUCTOR_SCRIPTS/safe-send-keys.sh"
 TIMEOUT=300  # 5 min per checkpoint
 
 # Gate type to skill mapping
@@ -123,11 +127,9 @@ spawn_checkpoint() {
     return 1
   fi
 
-  # Send the checkpoint skill invocation
+  # Send the checkpoint skill invocation (use safe-send-keys.sh)
   local PROMPT="Run the checkpoint skill $SKILL for gate $GATE_ID on issue $ISSUE_ID. Write result to .checkpoints/ and exit when done."
-  tmux send-keys -t "$SESSION" -l "$PROMPT"
-  sleep 1
-  tmux send-keys -t "$SESSION" Enter
+  "$SAFE_SEND_KEYS" "$SESSION" "$PROMPT"
 
   echo "$SESSION"
 }

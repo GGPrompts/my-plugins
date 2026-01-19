@@ -89,29 +89,28 @@ mcp__beads__update(
 
 ### 6. Communicate to Worker
 
+Find safe-send-keys.sh first:
+```bash
+SAFE_SEND_KEYS=$(find ~/plugins ~/.claude/plugins -name "safe-send-keys.sh" -path "*conductor*" 2>/dev/null | head -1)
+```
+
 **If PASS:**
 ```bash
-tmux send-keys -t "$WORKER_SESSION" -l "Pre-commit check passed. Gates will run on close."
-sleep 0.3
-tmux send-keys -t "$WORKER_SESSION" Enter
+"$SAFE_SEND_KEYS" "$WORKER_SESSION" "Pre-commit check passed. Gates will run on close."
 ```
 
 Output `Decision: PASS`
 
 **If NEEDS_WORK:**
 ```bash
-tmux send-keys -t "$WORKER_SESSION" -l "Pre-commit blocked: [reason]. Fix and commit again."
-sleep 0.3
-tmux send-keys -t "$WORKER_SESSION" Enter
+"$SAFE_SEND_KEYS" "$WORKER_SESSION" "Pre-commit blocked: [reason]. Fix and commit again."
 ```
 
 Output `Decision: NEEDS_WORK`
 
 **If WARN (pass with warning):**
 ```bash
-tmux send-keys -t "$WORKER_SESSION" -l "Pre-commit passed with note: [warning]. Consider addressing."
-sleep 0.3
-tmux send-keys -t "$WORKER_SESSION" Enter
+"$SAFE_SEND_KEYS" "$WORKER_SESSION" "Pre-commit passed with note: [warning]. Consider addressing."
 ```
 
 Output `Decision: PASS`

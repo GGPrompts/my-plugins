@@ -15,6 +15,10 @@ TOKEN="${TABZ_TOKEN:-$(cat /tmp/tabz-auth-token 2>/dev/null)}"
 POLL_INTERVAL="${POLL_INTERVAL:-15}"
 TIMEOUT="${TIMEOUT:-300}"
 
+# Find safe-send-keys.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SAFE_SEND_KEYS="$SCRIPT_DIR/safe-send-keys.sh"
+
 # Gate type to checkpoint skill mapping
 declare -A GATE_SKILLS=(
   ["codex-review"]="codex-review"
@@ -125,9 +129,7 @@ spawn_checkpoint() {
 
   # Send the checkpoint skill invocation
   local PROMPT="Run the /$SKILL checkpoint for gate $GATE_ID on issue $ISSUE_ID. Write result to .checkpoints/$SKILL.json and exit when done."
-  tmux send-keys -t "$SESSION" -l "$PROMPT"
-  sleep 1
-  tmux send-keys -t "$SESSION" Enter
+  "$SAFE_SEND_KEYS" "$SESSION" "$PROMPT"
 
   log_ok "Spawned $TERM_NAME (session: $SESSION)"
   echo "$SESSION"
