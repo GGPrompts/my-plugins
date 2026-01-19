@@ -160,7 +160,8 @@ The worker will:
 2. Load any skills mentioned in notes
 3. Do the work
 4. Commit changes with `git commit`
-5. Close the issue with `bd close ISSUE-ID --reason "done"`
+5. Write handoff notes with `bd update` (see [handoff-format.md](../references/handoff-format.md))
+6. Close the issue with `bd close ISSUE-ID --reason "done"`
 
 **Important for worktrees:**
 - Use `bd` CLI commands, NOT MCP tools (MCP has schema validation issues)

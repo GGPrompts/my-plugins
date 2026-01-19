@@ -99,35 +99,36 @@ SESSION="ctt-V4V-ct9-abc123"
 curl -s "http://localhost:8129/api/tmux/sessions/$SESSION/capture" | jq -r '.data.content' | tail -50
 ```
 
-## Worker Retro (Optional)
+## Handoff Notes
 
-Before cleanup, capture worker feedback:
+Workers should write structured handoff notes before closing. See [handoff-format.md](../references/handoff-format.md) for the full format.
+
+### Quick Example
 
 ```bash
 bd update ISSUE-ID --notes "$(cat <<'EOF'
-## Worker Retro
-- What was unclear: [e.g., "Prompt didn't mention auth middleware dependency"]
-- Missing context: [e.g., "Had to discover useTerminalSessions.ts - add to key files"]
-- Discovered work: [e.g., "Found tech debt in X, created follow-up issue"]
-- What would help: [e.g., "Link to relevant tests"]
+## Handoff
+
+**Status**: done
+**Summary**: Fixed null check in profile loader
+
+### Changes
+- src/profile.ts: Added null guard on line 45
+
+### Retro
+- Straightforward fix, no issues
 EOF
 )"
 ```
 
-### Retro Questions
-
-| Question | Why It Helps |
-|----------|--------------|
-| What was unclear in the prompt? | Improve prompt templates |
-| What context did you wish you had? | Better key files lists |
-| What did you have to search for? | Add to CLAUDE.md |
-| Did you discover unrelated work? | Validate issue scoping |
-| What would've made this 2x faster? | Process improvements |
-
-### Mining Retros
+### Mining Handoffs
 
 ```bash
-bd list --status closed --json | jq -r '.[] | select(.notes | contains("Retro")) | "\(.id): \(.notes)"'
+# Find all issues with handoff notes
+bd list --status closed --json | jq -r '.[] | select(.notes | contains("Handoff")) | "\(.id): \(.title)"'
+
+# Extract status from a specific issue
+bd show ISSUE-ID --json | jq -r '.[0].notes' | grep -oP '(?<=\*\*Status\*\*: )\w+'
 ```
 
 ## Notes
