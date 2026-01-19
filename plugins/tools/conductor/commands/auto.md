@@ -133,9 +133,16 @@ spawn_worker() {
 
   # Send prompt - use CLI not MCP, don't run bd sync (fails in worktrees)
   local PROMPT="Complete beads issue $ISSUE_ID. Use CLI commands (bd show, bd update, bd close) not MCP tools. Do NOT run bd sync - just commit and the conductor will merge. Run: bd show $ISSUE_ID --json"
-  tmux send-keys -t "$SESSION" -l "$PROMPT"
-  sleep 1
-  tmux send-keys -t "$SESSION" Enter
+
+  # Use safe-send-keys.sh for reliable prompt delivery (handles long prompts)
+  if [ -n "$CONDUCTOR_SCRIPTS" ] && [ -x "$CONDUCTOR_SCRIPTS/safe-send-keys.sh" ]; then
+    "$CONDUCTOR_SCRIPTS/safe-send-keys.sh" "$SESSION" "$PROMPT"
+  else
+    # Fallback: inline tmux with 1s delay
+    tmux send-keys -t "$SESSION" -l "$PROMPT"
+    sleep 1
+    tmux send-keys -t "$SESSION" C-m
+  fi
 
   echo "Spawned $ISSUE_ID → $SESSION"
 }
