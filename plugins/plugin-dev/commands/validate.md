@@ -1,4 +1,5 @@
 ---
+name: validate
 description: Quick validation on plugins before commits
 allowed-tools:
   - Bash

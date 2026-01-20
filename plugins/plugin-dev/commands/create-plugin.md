@@ -1,4 +1,5 @@
 ---
+name: create-plugin
 description: 8-phase workflow for creating high-quality Claude Code plugins from concept to tested implementation
 argument-hint: [plugin-description]
 ---

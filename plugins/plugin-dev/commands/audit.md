@@ -1,4 +1,5 @@
 ---
+name: audit
 description: Run full audit suite on plugin structure with detailed logs
 allowed-tools:
   - Bash
