@@ -1,0 +1,9 @@
+{
+  "name": "copilot-tools",
+  "version": "1.0.0",
+  "description": "Multi-model orchestration with GitHub Copilot CLI - audit, council, and model presets",
+  "commands": [
+    "./commands/audit.md",
+    "./commands/council.md"
+  ]
+}

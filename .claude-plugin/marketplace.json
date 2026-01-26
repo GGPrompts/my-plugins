@@ -315,6 +315,13 @@
       "source": "./plugins/opus-agents",
       "category": "meta",
       "keywords": ["opus", "agent", "general-purpose", "implementation"]
+    },
+    {
+      "name": "copilot-tools",
+      "description": "Multi-model orchestration - audit with gpt5-mini, council with Opus/Codex/Gemini",
+      "source": "./plugins/copilot-tools",
+      "category": "tools",
+      "keywords": ["copilot", "codex", "gpt5", "gemini", "audit", "council", "multi-model", "orchestration"]
     }
   ]
 }
