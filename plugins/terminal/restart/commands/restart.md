@@ -22,7 +22,19 @@ if [ -n "$TMUX_PANE" ]; then
         tmux send-keys -t "$TMUX_PANE" -l 'quit'
         sleep 0.3
         tmux send-keys -t "$TMUX_PANE" C-m
-        sleep 4
+        # Wait for Claude to actually exit (poll instead of fixed sleep)
+        MAX_WAIT=30
+        WAITED=0
+        while [ $WAITED -lt $MAX_WAIT ]; do
+            # Check if pane shows shell prompt ($ or %) indicating Claude exited
+            PANE_CONTENT=$(tmux capture-pane -t "$TMUX_PANE" -p -l 3 2>/dev/null | tail -1)
+            if echo "$PANE_CONTENT" | grep -qE '(\$|%|#|❯)\s*$'; then
+                break
+            fi
+            sleep 0.5
+            WAITED=$((WAITED + 1))
+        done
+        sleep 0.5  # Small extra buffer after prompt detected
         tmux send-keys -t "$TMUX_PANE" -l "$CLAUDE_CMD"
         sleep 0.3
         tmux send-keys -t "$TMUX_PANE" C-m
