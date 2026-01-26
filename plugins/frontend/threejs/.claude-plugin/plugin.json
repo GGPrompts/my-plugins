@@ -1,0 +1,6 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "threejs",
+  "description": "Three.js 3D graphics - scene setup, geometry, materials, lighting, animation, shaders, post-processing",
+  "version": "1.0.0"
+}

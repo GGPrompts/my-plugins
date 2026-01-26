@@ -44,6 +44,20 @@
       "keywords": ["nextjs", "next", "remix", "turborepo", "web", "framework", "ssr"]
     },
     {
+      "name": "threejs",
+      "description": "Three.js 3D graphics - scene setup, geometry, materials, lighting, animation, shaders, post-processing",
+      "source": "./plugins/frontend/threejs",
+      "category": "frontend",
+      "keywords": ["threejs", "3d", "webgl", "graphics", "animation", "shader", "scene", "geometry", "materials"]
+    },
+    {
+      "name": "remotion",
+      "description": "Remotion - create videos programmatically with React, animations, audio/video, captions, 3D",
+      "source": "./plugins/frontend/remotion",
+      "category": "frontend",
+      "keywords": ["remotion", "video", "react", "animation", "render", "composition", "captions", "programmatic"]
+    },
+    {
       "name": "backend-development",
       "description": "Build robust backend systems - Node.js, Python, Go, APIs, databases, authentication",
       "source": "./plugins/backend/backend-development",

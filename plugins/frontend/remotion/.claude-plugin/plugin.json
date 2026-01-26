@@ -1,0 +1,6 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "remotion",
+  "description": "Remotion - create videos programmatically with React, animations, audio/video, captions, 3D",
+  "version": "1.0.0"
+}
