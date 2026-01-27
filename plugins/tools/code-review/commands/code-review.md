@@ -1,239 +1,158 @@
 ---
-description: Review code changes for beads issues
+description: Review code changes with parallel detection and smart fixing
 ---
 
-Review code changes with automated quality checks and confidence-based filtering.
+Review code changes using 5 parallel Haiku detection agents, with Opus fixes only when issues are found.
 
 ## Usage
 
 ```bash
 /code-review                    # Review uncommitted changes
 /code-review <issue-id>         # Review changes for specific beads issue
-/code-review --thorough         # Deep review with parallel specialists
+/code-review --quick            # Fast mode: lint + type check only
 ```
+
+## Architecture
+
+```
+Detection (5 Haiku in parallel) → Aggregate → Fix if needed (1 Opus)
+```
+
+- **Clean code:** 5 cheap Haiku calls, done
+- **Issues found:** 5 Haiku + 1 Opus to fix
 
 ## Process
 
-Follow these steps precisely:
-
 ### 1. Determine Scope
 
-If `<issue-id>` provided:
-- Get issue details: `bd view <issue-id>`
-- Get commits for issue: `bd log <issue-id>` or check issue metadata for commit range
-- Get diff: `git diff <base-sha>..<head-sha>`
+**With issue-id:**
+```bash
+bd show <issue-id>              # Get issue context
+git log --oneline <issue-id>    # Find commits
+git diff <base>..<head>         # Get diff
+```
 
-If no issue-id:
-- Review uncommitted changes: `git diff HEAD`
-- Get list of changed files: `git status --short`
+**Without issue-id:**
+```bash
+git diff HEAD                   # Uncommitted changes
+git status --short              # Changed files
+```
 
-### 2. Find Relevant CLAUDE.md Files
+### 2. Quick Mode (`--quick`)
+
+For trivial changes (docs, config), run fast checks only:
 
 ```bash
-# Get directories with changes
-CHANGED_DIRS=$(git diff --name-only | xargs -I{} dirname {} | sort -u)
-
-# Read root CLAUDE.md
-cat CLAUDE.md 2>/dev/null
-
-# Read CLAUDE.md in changed directories
-for dir in $CHANGED_DIRS; do
-  cat "$dir/CLAUDE.md" 2>/dev/null
-done
+npx tsc --noEmit 2>&1 | grep -i error || true
+npm run lint 2>&1 | grep -i error || true
+grep -rn "api.key\|secret\|password" --include="*.ts" $(git diff --name-only HEAD)
 ```
 
-### 3. Launch Review Agents
+If all pass: `✅ Quick checks passed` and STOP.
 
-#### Standard Mode (default)
+### 3. Launch 5 Detection Agents (PARALLEL)
 
-Spawn main reviewer agent:
+**CRITICAL:** Launch ALL 5 in a SINGLE message for parallel execution.
 
-```markdown
-Task(
-  subagent_type="code-review:reviewer",
-  prompt="Review changes. Issue: <issue-id>. Changed files: <files>"
-)
+```
+Task(subagent_type="code-review:claude-md-scan", model="haiku", prompt="...")
+Task(subagent_type="code-review:bug-scan", model="haiku", prompt="...")
+Task(subagent_type="code-review:security-scan", model="haiku", prompt="...")
+Task(subagent_type="code-review:silent-failure-scan", model="haiku", prompt="...")
+Task(subagent_type="code-review:git-context-scan", model="haiku", prompt="...")
 ```
 
-The reviewer will:
-- Check CLAUDE.md compliance
-- Scan for bugs (confidence ≥80)
-- Auto-fix high-confidence issues (≥95)
-- Assess test coverage needs
-- Return structured JSON output
+Each agent returns JSON with `flagged` and `blockers` arrays.
 
-#### Thorough Mode (`--thorough`)
+### 4. Aggregate & Filter
 
-Launch 3 parallel specialized reviewers:
+1. Merge all findings from 5 agents
+2. Deduplicate (same file:line = keep highest confidence)
+3. Filter out <80% confidence
+4. Sort by confidence descending
 
-1. **Main Review** - `code-review:reviewer` (Opus)
-   - CLAUDE.md compliance
-   - Bug detection
-   - Test coverage assessment
+### 5. Decision Point
 
-2. **Security Scan** - `code-review:security-scan` (Haiku)
-   - OWASP Top 10 vulnerabilities
-   - Exposed secrets (BLOCKER)
-   - Injection vulnerabilities
-   - Auth issues
+**No issues ≥80%:**
+```
+✅ Code Review PASSED
+- Scanned by 5 agents
+- No issues found
+```
+STOP - no Opus needed.
 
-3. **Silent Failures** - `code-review:silent-failure-scan` (Haiku)
-   - Empty catch blocks
-   - Swallowed errors
-   - Missing error logging
-   - Silent fallbacks
+**Issues found:**
+Continue to fixer.
 
-All agents return JSON. Merge results with confidence-based filtering.
+### 6. Launch Fixer (Opus)
 
-### 4. Process Results
+Only if issues exist:
 
-Collect output from all agents and:
+```
+Task(subagent_type="code-review:fixer", model="opus",
+     prompt="Fix these issues: <aggregated JSON>")
+```
 
-1. **Merge findings** - Deduplicate issues across agents
-2. **Filter by confidence** - Only report issues ≥80% confidence
-3. **Check for blockers**:
-   - Security vulnerabilities (exposed secrets, injection)
-   - Critical bugs (data loss, crashes)
-   - Required tests missing (`recommendation: "required"`)
-4. **Auto-fixes applied** - List what was fixed automatically (≥95% confidence)
+Fixer will:
+- Auto-fix ≥90% confidence issues
+- Add TODO comments for 80-89%
+- Skip issues needing design decisions
+- Verify fixes compile
 
-### 5. Report Results
+### 7. Report
 
-#### If blockers found:
-
+**Blockers remain:**
 ```
 ❌ Code Review FAILED
 
-BLOCKERS (must fix before proceeding):
+BLOCKERS:
 - [SECURITY] Exposed API key in src/config.ts:12
-- [CRITICAL] Null pointer access in src/api.ts:45
-- [TESTS] Missing tests for payment validation (required)
-
-Fix these issues and run /code-review again.
 ```
 
-#### If warnings only:
-
-```
-⚠️  Code Review PASSED with warnings
-
-Auto-fixed (2):
-- Removed unused import in src/utils.ts:5
-- Fixed console.log in src/debug.ts:23
-
-Important issues (3):
-- Missing error handling in src/api.ts:34 (CLAUDE.md violation)
-- Potential race condition in src/worker.ts:67
-- Tests recommended for new API endpoint (medium priority)
-
-Review complete. Address warnings when convenient.
-```
-
-#### If clean:
-
+**All fixed:**
 ```
 ✅ Code Review PASSED
 
-- Reviewed 5 files
-- CLAUDE.md compliance verified
-- No security issues
-- No blockers
-
-Tests: Not required (config changes only)
-
-Ready to proceed.
+Auto-fixed (2):
+- Empty catch in src/api.ts:67
+- Missing await in src/utils.ts:23
 ```
 
-### 6. Integration with Beads
+**Warnings only:**
+```
+⚠️ Code Review PASSED with warnings
 
-For beads workflow integration:
-
-```bash
-# After worker completes issue
-bd view <issue-id>              # Get issue details
-/code-review <issue-id>         # Run review
-
-# If passed, mark ready for merge
-bd update <issue-id> --status reviewed
-
-# If blockers, create follow-up issue
-bd create "Fix code review blockers for #<issue-id>" --depends-on <issue-id>
+Manual review needed (1):
+- Broad catch in src/auth.ts:34 (85%)
 ```
 
-## Output Format
+## Detection Agents
 
-All reviewer agents return JSON:
+| Agent | Focus | Model |
+|-------|-------|-------|
+| claude-md-scan | CLAUDE.md compliance | Haiku |
+| bug-scan | Bug detection | Haiku |
+| security-scan | Security vulnerabilities | Haiku |
+| silent-failure-scan | Error handling | Haiku |
+| git-context-scan | Git history context | Haiku |
 
-```json
-{
-  "passed": true,
-  "mode": "thorough",
-  "summary": "Reviewed 5 files. Auto-fixed 2 issues. No blockers.",
-  "auto_fixed": [
-    {
-      "file": "src/utils.ts",
-      "line": 45,
-      "issue": "Unused import 'axios'",
-      "confidence": 98,
-      "fix": "Removed import"
-    }
-  ],
-  "flagged": [
-    {
-      "severity": "important",
-      "file": "src/auth/login.ts",
-      "line": 23,
-      "issue": "Missing error handling for API call",
-      "confidence": 85,
-      "rule": "CLAUDE.md: 'Always wrap API calls in try-catch'",
-      "suggestion": "Add try-catch around fetch call"
-    }
-  ],
-  "blockers": [],
-  "needs_tests": true,
-  "test_assessment": {
-    "recommendation": "recommended",
-    "rationale": "New API utility with validation logic",
-    "suggested_tests": [
-      {
-        "type": "unit",
-        "target": "validateApiResponse()",
-        "cases": ["valid response", "error response", "null response"]
-      }
-    ],
-    "priority": "medium"
-  }
-}
-```
+## Fixer Agent
+
+| Agent | Focus | Model |
+|-------|-------|-------|
+| fixer | Apply fixes for ≥90% confidence | Opus |
 
 ## Confidence Scoring
 
-All agents use consistent confidence scoring:
-
-| Score | Meaning | Action |
-|-------|---------|--------|
-| 0-25 | False positive / can't verify | Skip |
-| 50-75 | Real but minor / uncertain | Skip |
-| **80-94** | Verified issue | **Flag** |
-| **95-100** | Certain bug or violation | **Auto-fix** |
-
-## False Positives to Skip
-
-Do NOT report:
-- Pre-existing issues (not in the diff)
-- Lines not modified in this change
-- Linter/type errors (CI catches these)
-- Intentional functionality changes
-- Style preferences not in CLAUDE.md
-- Hypothetical bugs without evidence
-- Test-only code issues
-- Silenced issues (with disable comments)
+| Score | Action |
+|-------|--------|
+| 0-79 | Skip |
+| 80-89 | Flag + TODO |
+| 90-100 | Auto-fix |
 
 ## Notes
 
-- Make a todo list before starting review
-- Use `Task` tool to spawn reviewer agents, not Bash
-- Always cite sources (CLAUDE.md rules, file locations with line numbers)
-- For beads issues, focus on the specific commits, not entire codebase
-- Auto-fixes should be minimal and preserve formatting
-- Test assessment is mandatory for all reviews
+- Make a todo list before starting
+- Use Task tool to spawn agents, not Bash
+- Launch all 5 detection agents in ONE message (parallel)
+- Opus only runs when issues found (cost optimization)
