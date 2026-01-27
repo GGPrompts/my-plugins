@@ -11,6 +11,7 @@ Review code changes using parallel Haiku detection agents, with Opus fixes when 
 ```bash
 /code-review                    # Review uncommitted changes
 /code-review <issue-id>         # Review changes for specific beads issue
+/code-review --files src/api src/auth   # Review specific directories/files
 /code-review --quick            # Fast mode: lint + type check only
 ```
 
@@ -52,13 +53,26 @@ Review code changes using parallel Haiku detection agents, with Opus fixes when 
 
 ### 1. Determine Scope
 
-If `<issue-id>` provided:
+**If `--files <paths>` provided** (for project-wide reviews):
+```bash
+# List all files in specified paths
+find <paths> -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.py" \) | head -100
+
+# Read relevant CLAUDE.md files
+cat CLAUDE.md 2>/dev/null
+for path in <paths>; do
+  cat "$path/CLAUDE.md" 2>/dev/null
+done
+```
+Review ALL code in specified paths, not just changes.
+
+**If `<issue-id>` provided:**
 ```bash
 bd show <issue-id>
 git diff <base>..<head>
 ```
 
-If no issue-id:
+**If no arguments:**
 ```bash
 git diff HEAD
 git status --short
@@ -213,10 +227,32 @@ bd update <issue-id> --status=reviewed
 bd create --title="Fix review blockers for <issue-id>" --type=bug
 ```
 
+## Project-Wide Review (with Conductor)
+
+For large projects, conductor can parallelize:
+
+```
+Conductor divides project:
+├─→ Worker 1: /code-review --files src/api src/models
+├─→ Worker 2: /code-review --files src/components src/hooks
+└─→ Worker 3: /code-review --files src/utils src/lib
+```
+
+Each worker spawns its own 5 Haiku agents = 15 parallel scanners.
+
+**Example conductor prompt:**
+```
+Divide this project and run /code-review on each section:
+- src/api, src/models → high priority (auth, data)
+- src/components → medium priority
+- src/utils, src/lib → lower priority
+```
+
 ## Notes
 
 - Always launch detection agents in parallel (single message, 5 Task calls)
 - Opus fixer only runs when issues are found (cost optimization)
 - Use `--quick` for config/docs changes
+- Use `--files` for project-wide reviews or conductor parallelization
 - Detection agents return JSON - parse and aggregate
 - Fixer agent makes minimal changes, preserves style

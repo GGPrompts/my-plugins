@@ -9,6 +9,7 @@ Review code changes using 5 parallel Haiku detection agents, with Opus fixes onl
 ```bash
 /code-review                    # Review uncommitted changes
 /code-review <issue-id>         # Review changes for specific beads issue
+/code-review --files src/api src/auth   # Review specific directories/files
 /code-review --quick            # Fast mode: lint + type check only
 ```
 
@@ -25,6 +26,16 @@ Detection (5 Haiku in parallel) → Aggregate → Fix if needed (1 Opus)
 
 ### 1. Determine Scope
 
+**With `--files <paths>`** (project-wide review):
+```bash
+# List files in specified paths
+find <paths> -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.py" \) | head -100
+
+# Get CLAUDE.md for each path
+cat CLAUDE.md && cat <path>/CLAUDE.md for each path
+```
+Reviews ALL code in paths, not just changes. Useful for conductor parallelization.
+
 **With issue-id:**
 ```bash
 bd show <issue-id>              # Get issue context
@@ -32,7 +43,7 @@ git log --oneline <issue-id>    # Find commits
 git diff <base>..<head>         # Get diff
 ```
 
-**Without issue-id:**
+**Without arguments:**
 ```bash
 git diff HEAD                   # Uncommitted changes
 git status --short              # Changed files
