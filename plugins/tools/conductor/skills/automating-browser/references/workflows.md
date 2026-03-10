@@ -1,56 +1,59 @@
 # Claude Code MCP Patterns
 
-Quick reference for using tabz MCP tools in Claude Code.
+Quick reference for using tabz MCP tools in Claude Code via mcp-cli.
 
-## Load Tools First
+## Check Schema First
 
-Always use MCPSearch before calling MCP tools:
+Always check the tool schema before calling:
 
-```
-# Search by keyword
-MCPSearch with query: "screenshot"
+```bash
+# Get tool schema (REQUIRED before calling)
+mcp-cli info tabz/tabz_screenshot
 
-# Load specific tool
-MCPSearch with query: "select:mcp__tabz__tabz_screenshot"
+# Search for tools by keyword
+mcp-cli grep "screenshot"
+
+# List all tabz tools
+mcp-cli tools tabz
 ```
 
 ## Common Debugging Workflows
 
 ### Console Errors
 
-```
-MCPSearch: select:mcp__tabz__tabz_get_console_logs
-mcp__tabz__tabz_get_console_logs with level="error"
+```bash
+mcp-cli info tabz/tabz_get_console_logs
+mcp-cli call tabz/tabz_get_console_logs '{"level": "error"}'
 ```
 
 ### Network/API Debugging
 
-```
+```bash
 # Enable BEFORE the action
-MCPSearch: select:mcp__tabz__tabz_enable_network_capture
-mcp__tabz__tabz_enable_network_capture
+mcp-cli info tabz/tabz_enable_network_capture
+mcp-cli call tabz/tabz_enable_network_capture '{}'
 
 # Trigger action (click, navigate, etc.)
 
 # Check failures
-MCPSearch: select:mcp__tabz__tabz_get_network_requests
-mcp__tabz__tabz_get_network_requests with statusFilter="error"
+mcp-cli info tabz/tabz_get_network_requests
+mcp-cli call tabz/tabz_get_network_requests '{"statusMin": 400}'
 ```
 
 ### Screenshot + View
 
-```
-MCPSearch: select:mcp__tabz__tabz_screenshot
-mcp__tabz__tabz_screenshot
+```bash
+mcp-cli info tabz/tabz_screenshot
+mcp-cli call tabz/tabz_screenshot '{}'
 # Returns path like /tmp/tabz-screenshots/...
-Read the returned file path to view
+# Use Read tool to view the returned file path
 ```
 
 ### Get Page Info
 
-```
-MCPSearch: select:mcp__tabz__tabz_get_page_info
-mcp__tabz__tabz_get_page_info
+```bash
+mcp-cli info tabz/tabz_get_page_info
+mcp-cli call tabz/tabz_get_page_info '{}'
 # Returns: url, title, loading state
 ```
 
@@ -58,56 +61,56 @@ mcp__tabz__tabz_get_page_info
 
 ### Click
 
-```
-MCPSearch: select:mcp__tabz__tabz_click
-mcp__tabz__tabz_click with selector="button.submit"
+```bash
+mcp-cli info tabz/tabz_click
+mcp-cli call tabz/tabz_click '{"selector": "button.submit"}'
 ```
 
 ### Fill Form
 
-```
-MCPSearch: select:mcp__tabz__tabz_fill
-mcp__tabz__tabz_fill with selector="#email" value="test@example.com"
+```bash
+mcp-cli info tabz/tabz_fill
+mcp-cli call tabz/tabz_fill '{"selector": "#email", "value": "test@example.com"}'
 ```
 
 ## Tab Management
 
 ### List Tabs
 
-```
-MCPSearch: select:mcp__tabz__tabz_list_tabs
-mcp__tabz__tabz_list_tabs
+```bash
+mcp-cli info tabz/tabz_list_tabs
+mcp-cli call tabz/tabz_list_tabs '{}'
 # Note: Tab IDs are large integers (e.g., 1762556601)
 ```
 
 ### Switch Tab
 
-```
-MCPSearch: select:mcp__tabz__tabz_switch_tab
-mcp__tabz__tabz_switch_tab with tabId=1762556601
+```bash
+mcp-cli info tabz/tabz_switch_tab
+mcp-cli call tabz/tabz_switch_tab '{"tabId": 1762556601}'
 ```
 
 ### Create Tab Group
 
-```
-MCPSearch: select:mcp__tabz__tabz_create_group
-mcp__tabz__tabz_create_group with tabIds=[123,456] title="My Research" color="blue"
+```bash
+mcp-cli info tabz/tabz_create_group
+mcp-cli call tabz/tabz_create_group '{"tabIds": [123, 456], "title": "My Research", "color": "blue"}'
 ```
 
 ## TTS Notifications
 
-```
-MCPSearch: select:mcp__tabz__tabz_speak
-mcp__tabz__tabz_speak with text="Task complete" priority="high"
+```bash
+mcp-cli info tabz/tabz_speak
+mcp-cli call tabz/tabz_speak '{"text": "Task complete", "priority": "high"}'
 ```
 
 ## Device Emulation
 
-```
-MCPSearch: select:mcp__tabz__tabz_emulate_device
-mcp__tabz__tabz_emulate_device with device="iPhone 14"
+```bash
+mcp-cli info tabz/tabz_emulate_device
+mcp-cli call tabz/tabz_emulate_device '{"device": "iPhone 14"}'
 
 # Clear emulation
-MCPSearch: select:mcp__tabz__tabz_emulate_clear
-mcp__tabz__tabz_emulate_clear
+mcp-cli info tabz/tabz_emulate_clear
+mcp-cli call tabz/tabz_emulate_clear '{}'
 ```

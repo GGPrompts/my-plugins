@@ -1,225 +1,88 @@
 ---
 name: docs-check
-description: "Documentation check checkpoint for conductor gates. Analyzes code changes to determine if documentation needs updating. Returns structured result with pass/fail status and documentation suggestions."
+description: "Docs/changelog checkpoint. Detects whether changes are user-facing and ensures documentation hygiene (CHANGELOG + lessons-learned) is handled or explicitly bypassed. Use when: 'docs check', 'changelog', 'release notes', 'did we update docs?'."
 user-invocable: true
+model: haiku
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
-# Docs Check Checkpoint
+# Docs Checkpoint
 
-Documentation checkpoint that verifies docs are up-to-date with code changes.
+Ensures documentation hygiene is not missed.
 
-## What This Skill Does
+Writes result to `.checkpoints/docs-check.json`.
 
-1. Analyzes what changed in the code
-2. Identifies documentation-relevant changes
-3. Checks if corresponding docs exist and are current
-4. Suggests documentation updates if needed
-5. Writes result to checkpoint file
+## Heuristics (v1)
+
+- **Docs-only change** (only `*.md`, `*.txt`, or files under `.claude/`, `.claude-plugin/`, `docs/`, `plugins/`) → PASS
+- **Code change** (anything else) → requires one of:
+  - `CHANGELOG.md` updated, OR
+  - an explicit bypass label on the issue (recommended): `no-changelog`
+
+Why the bypass label? Some changes are internal/refactors and not user-facing. The label makes that decision explicit and searchable.
 
 ## Workflow
 
-### Step 1: Get Changed Files
+### Step 1: Identify Issue + Diff
+
+You should be given an issue ID in the prompt (e.g. `TabzChrome-abc`).
+
+Determine changed files:
 
 ```bash
-# For uncommitted changes
-git diff --name-only HEAD
-git diff --name-only --cached
+git status --porcelain
 
-# For branch diff
+# If clean, compare to main
 git diff --name-only main...HEAD
+
+# If not clean, prefer staged+unstaged
+git diff --name-only
+git diff --cached --name-only
 ```
 
-### Step 2: Categorize Changes
-
-Identify what type of changes were made:
-
-| Change Type | Documentation Impact |
-|-------------|---------------------|
-| New API endpoint | API docs needed |
-| New CLI command | Usage docs needed |
-| Config schema change | Config docs needed |
-| Breaking change | Migration guide needed |
-| New feature | README/feature docs |
-| Bug fix | Usually no docs needed |
-| Refactor (no API change) | No docs needed |
-
-### Step 3: Check Existing Documentation
-
-Look for docs that might need updates:
+### Step 2: Decide PASS/FAIL
 
 ```bash
-# Common doc locations
-ls README.md CHANGELOG.md docs/ *.md 2>/dev/null
+CHANGED=$( (git diff --name-only main...HEAD 2>/dev/null || true) ; git diff --name-only 2>/dev/null || true ; git diff --cached --name-only 2>/dev/null || true )
+CHANGED=$(echo "$CHANGED" | sed '/^$/d' | sort -u)
 
-# API docs
-ls docs/API.md docs/api/ swagger.yaml openapi.yaml 2>/dev/null
-
-# Check if changed files have corresponding docs
-# e.g., if routes/api.js changed, check docs/API.md
+# Docs-only patterns (v1)
+if echo "$CHANGED" | grep -qvE '(\.md|\.markdown|\.txt)$' \
+  && echo "$CHANGED" | grep -qvE '^(docs/|plugins/|\.claude/|\.claude-plugin/)'; then
+  CODE_CHANGED=1
+else
+  CODE_CHANGED=0
+fi
 ```
 
-### Step 4: Analyze Documentation Gaps
+If `CODE_CHANGED=1`, check:
 
-For each significant change, check:
+```bash
+# Changelog modified?
+git diff --name-only main...HEAD 2>/dev/null | grep -q '^CHANGELOG\.md$' && CHANGELOG_OK=1 || CHANGELOG_OK=0
 
-1. **API changes** - Is there API documentation? Does it cover new endpoints?
-2. **Config changes** - Are new config options documented?
-3. **Breaking changes** - Is there a migration guide?
-4. **New features** - Is the feature documented for users?
-5. **CHANGELOG** - Is there a changelog entry?
-
-### Step 5: Create Structured Result
-
-```json
-{
-  "checkpoint": "docs-check",
-  "timestamp": "2026-01-19T12:00:00Z",
-  "passed": true,
-  "changes_analyzed": 5,
-  "suggestions": [
-    {
-      "type": "api",
-      "file": "docs/API.md",
-      "message": "New endpoint POST /api/spawn should be documented",
-      "priority": "high"
-    },
-    {
-      "type": "changelog",
-      "file": "CHANGELOG.md",
-      "message": "Consider adding changelog entry for new feature",
-      "priority": "medium"
-    }
-  ],
-  "summary": "2 documentation suggestions. None are blocking."
-}
+# Issue has bypass label?
+LABELS=$(bd show "$ISSUE_ID" --json 2>/dev/null | jq -r '.[0].labels[]?' 2>/dev/null || true)
+echo "$LABELS" | grep -qx 'no-changelog' && BYPASS=1 || BYPASS=0
 ```
 
-**Result Fields:**
-- `passed`: true if no critical documentation missing
-- `changes_analyzed`: number of changed files analyzed
-- `suggestions`: array of `{type, file, message, priority: "high"|"medium"|"low"}`
-- `summary`: brief human-readable summary
+- If `CHANGELOG_OK=1` OR `BYPASS=1` → PASS
+- Else → FAIL and ask for either a `CHANGELOG.md` entry or a `no-changelog` label.
 
-### Step 6: Write Checkpoint File
+### Step 3: Write Checkpoint File
 
 ```bash
 mkdir -p .checkpoints
-cat > .checkpoints/docs-check.json << 'EOF'
+cat > .checkpoints/docs-check.json << EOF
 {
   "checkpoint": "docs-check",
-  ...
+  "timestamp": "$(date -Iseconds)",
+  "passed": ${PASSED},
+  "code_changed": ${CODE_CHANGED},
+  "changelog_updated": ${CHANGELOG_OK},
+  "bypass_label": ${BYPASS},
+  "summary": "${SUMMARY}"
 }
 EOF
 ```
 
-## Decision Criteria
-
-**Pass if:**
-- No critical documentation gaps
-- Minor suggestions are acceptable
-
-**Fail if:**
-- Breaking changes without migration guide
-- New public API without documentation
-- README claims features that don't exist
-
-**Suggestion priorities:**
-- `high`: Should be documented before merge
-- `medium`: Should be documented soon
-- `low`: Nice to have, not blocking
-
-## Documentation Patterns to Check
-
-### API Changes
-
-If files like `routes/*.js`, `api/*.ts`, `endpoints/*` changed:
-- Check `docs/API.md` or similar
-- Look for OpenAPI/Swagger specs
-- Verify new endpoints are documented
-
-### Configuration Changes
-
-If files like `config.js`, `.env.example`, `settings.json` changed:
-- Check README configuration section
-- Verify new options are documented
-- Check for breaking config changes
-
-### CLI Changes
-
-If argument parsing or command files changed:
-- Check `--help` output accuracy
-- Verify README usage section
-- Check man pages if applicable
-
-### Breaking Changes
-
-Indicators of breaking changes:
-- Removed or renamed exports
-- Changed function signatures
-- Modified config schema
-- Database migration files
-
-### CHANGELOG
-
-For any user-visible change:
-- Should have CHANGELOG entry
-- Entry should mention issue ID if applicable
-- Breaking changes should be clearly marked
-
-## Example Usage
-
-When invoked as `/docs-check`:
-
-```
-Running Docs Check checkpoint...
-
-Analyzing changed files...
-Found 8 changed files:
-- backend/routes/api.js (modified)
-- backend/modules/spawn-handler.js (new)
-- extension/hooks/useSpawn.ts (new)
-- README.md (modified)
-- docs/API.md (not modified)
-
-Checking documentation coverage...
-
-API changes detected:
-- New endpoint: POST /api/spawn
-- docs/API.md does not document this endpoint
-
-New feature detected:
-- Spawn functionality added
-- README.md was updated (good!)
-
-Result:
-{
-  "passed": true,
-  "suggestions": [
-    {
-      "type": "api",
-      "file": "docs/API.md",
-      "message": "Document POST /api/spawn endpoint",
-      "priority": "high"
-    }
-  ],
-  "summary": "1 high-priority suggestion: API docs need update"
-}
-
-Checkpoint result written to .checkpoints/docs-check.json
-```
-
-## Files to Always Check
-
-| Project Type | Doc Files |
-|--------------|-----------|
-| Node.js | `README.md`, `CHANGELOG.md`, `docs/`, `API.md` |
-| Python | `README.md`, `docs/`, `CHANGELOG.md`, `*.rst` |
-| Rust | `README.md`, `CHANGELOG.md`, `docs/` |
-| Go | `README.md`, `doc.go`, `docs/` |
-
-## Notes
-
-- This checkpoint is advisory by default (suggestions don't block)
-- For strict projects, configure to fail on high-priority suggestions
-- Always check CHANGELOG for any user-visible changes
-- Breaking changes MUST have documentation before merge

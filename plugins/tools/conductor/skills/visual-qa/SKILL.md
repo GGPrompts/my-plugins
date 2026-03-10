@@ -1,187 +1,110 @@
 ---
 name: visual-qa
-description: "Visual QA checkpoint for conductor gates. Uses tabz MCP tools to check browser console errors, take screenshots, and identify obvious UI issues. Returns structured result with pass/fail status and captured screenshots."
+description: "Visual QA checkpoint. Verifies UI changes in the extension/backend via quick smoke flows, screenshots, and console/network checks. Use when: 'visual QA', 'UI looks wrong', 'screenshot', 'verify in Chrome'."
 user-invocable: true
+model: haiku
+allowed-tools: Read, Grep, Glob, Bash
 ---
 
 # Visual QA Checkpoint
 
-Visual quality assurance checkpoint that uses browser automation to verify the UI.
+Lightweight visual smoke test for UI-facing changes.
 
-## What This Skill Does
+Writes result to `.checkpoints/visual-qa.json`.
 
-1. Checks browser console for errors
-2. Takes screenshot of current page
-3. Analyzes for obvious visual issues
-4. Writes result to checkpoint file
+## IMPORTANT: Not for Workers on Worktrees
 
-## Prerequisites
+**This checkpoint should only be run by the conductor AFTER merging changes to main.**
 
-- TabzChrome extension running
-- Application loaded in browser tab
-- `tabz` MCP server connected
+Workers on git worktrees cannot run visual-qa because:
+1. **Changes aren't built** - The extension/app isn't rebuilt with worktree changes
+2. **No isolated browser** - Workers share the same Chrome instance
+3. **Tab group conflicts** - Multiple workers fighting for tabs (especially if groups disabled)
+4. **Dev server conflicts** - Multiple `npm run dev` instances on same port
+
+**Correct workflow:**
+1. Worker completes code changes and commits
+2. Conductor merges to main
+3. Conductor rebuilds extension/app
+4. Conductor runs `/conductor:visual-qa` on main branch
+
+## Heuristics (v1)
+
+- If no UI-facing files changed (no changes under `extension/` and no `*.css`, `*.tsx`, `*.jsx`) → PASS (skipped).
+- Otherwise → perform a quick smoke test and record PASS/FAIL.
 
 ## Workflow
 
-### Step 1: Check Console Errors
+### Step 1: Detect UI-facing Changes
 
 ```bash
-# Get console logs filtered for errors
-mcp-cli info tabz/tabz_get_console_logs
-mcp-cli call tabz/tabz_get_console_logs '{"level": "error"}'
+CHANGED=$( (git diff --name-only main...HEAD 2>/dev/null || true) ; git diff --name-only 2>/dev/null || true ; git diff --cached --name-only 2>/dev/null || true )
+CHANGED=$(echo "$CHANGED" | sed '/^$/d' | sort -u)
+
+if echo "$CHANGED" | grep -qE '^(extension/)|(\.tsx$)|(\.jsx$)|(\.css$)'; then
+  NEEDS_VISUAL=1
+else
+  NEEDS_VISUAL=0
+fi
 ```
 
-**Important:** Console errors don't automatically fail - evaluate if they're blocking:
-- JS runtime errors that prevent functionality = FAIL
-- 404s for optional resources = WARNING
-- Deprecation warnings = INFO
+### Step 2: Tab Group Isolation (MANDATORY)
 
-### Step 2: Take Screenshot
+BEFORE any browser work, create YOUR OWN tab group with a random 3-digit suffix.
+
+This is mandatory because:
+- User can switch tabs at any time - active tab is unreliable
+- Multiple Claude workers may run simultaneously
+- Your operations target YOUR tabs, not the user's browsing
 
 ```bash
-# Capture current page state
-mcp-cli info tabz/tabz_screenshot
-mcp-cli call tabz/tabz_screenshot '{}'
+# 1. Generate random ID
+SESSION_ID="Claude-$(shuf -i 100-999 -n 1)"
+
+# 2. Create group
+mcp-cli call tabz/tabz_create_group '{"title": "'$SESSION_ID'", "color": "cyan"}'
+# Returns: {"groupId": 123, ...}
+
+# 3. Open URLs into YOUR group (use returned groupId)
+mcp-cli call tabz/tabz_open_url '{"url": "https://example.com", "groupId": 123}'
+
+# 4. Always use explicit tabId from your group - NEVER rely on active tab
 ```
 
-The screenshot file path is returned. Read it to visually inspect the page.
+### Step 3: Run Smoke Test (if needed)
 
-### Step 3: Check Page State
+If `NEEDS_VISUAL=1`, do the quickest relevant check:
+- Open the extension side panel and ensure it loads
+- Trigger the affected UI path
+- Check browser console for errors
+- Take a screenshot for evidence
 
+If you have Tabz MCP available, you can use it (preferred):
+- `tabz_get_console_logs` (errors)
+- `tabz_screenshot` (capture)
+- `tabz_enable_network_capture` + `tabz_get_network_requests` (API failures)
+
+**Always pass explicit `tabId`** - never rely on "active tab":
 ```bash
-# Verify page loaded correctly
-mcp-cli info tabz/tabz_get_page_info
-mcp-cli call tabz/tabz_get_page_info '{}'
+# Get your tab's ID from your group
+mcp-cli call tabz/tabz_screenshot '{"tabId": YOUR_TAB_ID}'
+mcp-cli call tabz/tabz_get_console_logs '{"tabId": YOUR_TAB_ID}'
 ```
 
-Verify:
-- Page title is not error page
-- URL matches expected
-- Page is not stuck loading
+If Tabz MCP isn't available, do a manual check and note it.
 
-### Step 4: Optional - Check Network Errors
-
-If functionality seems broken:
-
-```bash
-# Enable capture first (if not already)
-mcp-cli call tabz/tabz_enable_network_capture '{}'
-
-# Trigger the problematic action, then:
-mcp-cli call tabz/tabz_get_network_requests '{"statusMin": 400}'
-```
-
-### Step 5: Parse and Write Result
-
-Create structured result:
-
-```json
-{
-  "checkpoint": "visual-qa",
-  "timestamp": "2026-01-19T12:00:00Z",
-  "passed": true,
-  "issues": [],
-  "screenshots": ["/path/to/screenshot.png"],
-  "console_errors": 0,
-  "summary": "Page loads correctly, no visual issues detected"
-}
-```
-
-**Result Fields:**
-- `passed`: true if no blocking visual/console issues
-- `issues`: array of `{severity: "error"|"warning"|"info", message: string, type: "console"|"visual"|"network"}`
-- `screenshots`: array of screenshot file paths
-- `console_errors`: count of console errors found
-- `summary`: brief human-readable summary
-
-### Step 6: Write Checkpoint File
+### Step 4: Write Checkpoint File
 
 ```bash
 mkdir -p .checkpoints
-cat > .checkpoints/visual-qa.json << 'EOF'
+cat > .checkpoints/visual-qa.json << EOF
 {
   "checkpoint": "visual-qa",
-  "timestamp": "...",
-  "passed": true,
-  "issues": [],
-  "screenshots": [...],
-  "console_errors": 0,
-  "summary": "..."
+  "timestamp": "$(date -Iseconds)",
+  "passed": ${PASSED},
+  "needs_visual": ${NEEDS_VISUAL},
+  "summary": "${SUMMARY}"
 }
 EOF
 ```
 
-## Decision Criteria
-
-**Pass if:**
-- Page loads without critical console errors
-- No obvious visual breakage (blank page, missing components)
-- Key functionality appears present
-
-**Fail if:**
-- JS errors prevent page from rendering
-- Page shows error state or blank
-- Critical UI elements missing
-- API calls failing (5xx errors)
-
-**Warning (pass with notes) if:**
-- Non-critical console warnings
-- Minor styling issues
-- Slow load times
-
-## Visual Inspection Guidelines
-
-When viewing the screenshot, check for:
-
-1. **Layout integrity** - Is content properly positioned?
-2. **Text readability** - Is text visible, correct font/size?
-3. **Interactive elements** - Are buttons/links visible?
-4. **Error states** - Any error messages displayed?
-5. **Responsive fit** - Does content fit the viewport?
-
-## Example Usage
-
-When invoked as `/visual-qa`:
-
-```
-Running Visual QA checkpoint...
-
-Checking console for errors...
-Found 0 errors, 2 warnings.
-
-Taking screenshot...
-Screenshot saved to /tmp/tabz-screenshot-123.png
-[Viewing screenshot...]
-
-Page appears to load correctly. Navigation visible, content renders.
-
-Checking page info...
-Title: "My App - Dashboard"
-URL: http://localhost:3000/dashboard
-Status: Complete
-
-Result:
-{
-  "passed": true,
-  "issues": [
-    {"severity": "warning", "message": "React DevTools warning", "type": "console"}
-  ],
-  "screenshots": ["/tmp/tabz-screenshot-123.png"],
-  "console_errors": 0,
-  "summary": "Page loads correctly. Minor console warnings only."
-}
-
-Checkpoint result written to .checkpoints/visual-qa.json
-```
-
-## Troubleshooting
-
-**No MCP connection:**
-```bash
-mcp-cli tools tabz  # Should list tabz_* tools
-```
-
-**Screenshot fails:**
-- Ensure Chrome tab is focused
-- Check TabzChrome extension is active
-- Verify localhost:8129 backend is running

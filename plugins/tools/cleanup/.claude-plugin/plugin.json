@@ -1,0 +1,5 @@
+{
+  "name": "cleanup",
+  "version": "1.0.0",
+  "description": "Post-work cleanup: merge branches, remove worktrees, sync beads"
+}

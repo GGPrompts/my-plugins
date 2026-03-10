@@ -51,7 +51,7 @@ echo "Cleanup: Reviewing $FILES_CHANGED files for $ISSUE_ID ($STATS)..."
 CLEANUP_RESULT=$(ISSUE_ID="$ISSUE_ID" \
   WORKER_SESSION="$WORKER_SESSION" \
   WORKTREE_PATH="$WORKTREE_PATH" \
-  claude --agent conductor:cleanup \
+  claude --agent conductor:precommit-gate \
     --print \
     
     "Review staged changes for issue $ISSUE_ID.

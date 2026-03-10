@@ -94,6 +94,21 @@ get_summary() {
   echo "WORKERS:$total WORKING:$working IDLE:$idle AWAITING:$awaiting ASKING:$asking STALE:$stale"
 }
 
+# Get context % for a specific session (for self-monitoring)
+get_session_context() {
+  local target_session="$1"
+  local output
+  output=$(tmux capture-pane -t ":${MONITOR_WINDOW}" -p 2>/dev/null) || return 1
+
+  # Find the line with our session and extract context %
+  echo "$output" | grep -F "$target_session" | grep -oP '\[\d+%\]' | tr -d '[]%' | head -1
+}
+
+# Get current tmux session name (for conductor self-identification)
+get_current_session() {
+  tmux display-message -p '#{session_name}' 2>/dev/null
+}
+
 # Main command handling
 case "${1:-}" in
   --spawn)
@@ -111,8 +126,18 @@ case "${1:-}" in
   --raw)
     tmux capture-pane -t ":${MONITOR_WINDOW}" -p 2>/dev/null
     ;;
+  --context)
+    # Get context % for a specific session
+    get_session_context "${2:-$(get_current_session)}"
+    ;;
+  --self)
+    # Get current session's context % (for conductor self-monitoring)
+    current=$(get_current_session)
+    context=$(get_session_context "$current")
+    echo "${current}|${context:-unknown}"
+    ;;
   *)
-    echo "Usage: $0 [--spawn|--status|--summary|--check-issue ISSUE_ID|--raw]"
+    echo "Usage: $0 [--spawn|--status|--summary|--check-issue ISSUE_ID|--raw|--context SESSION|--self]"
     echo ""
     echo "Commands:"
     echo "  --spawn        Spawn tmuxplexer in background window"
@@ -120,6 +145,8 @@ case "${1:-}" in
     echo "  --summary      Get worker summary counts"
     echo "  --check-issue  Check if issue is closed"
     echo "  --raw          Get raw tmuxplexer pane output"
+    echo "  --context SES  Get context % for specific session"
+    echo "  --self         Get current session's context % (for self-monitoring)"
     exit 1
     ;;
 esac
