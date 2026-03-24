@@ -41,7 +41,7 @@ Dynamically decides how many scanner agents (2-8) and what each focuses on, base
 
 ### 4. Scan
 Launches all planned agents **in parallel**:
-- **scanner** agents (Haiku) — each with a focused prompt crafted from the language pattern library
+- **scanner** agents (Sonnet) — each with a focused prompt crafted from the language pattern library
 - **claude-md-scan** (Haiku) — CLAUDE.md compliance, if applicable
 
 ### 5. Aggregate
@@ -60,7 +60,7 @@ Clear pass/fail report with categorized findings.
 
 | Agent | Purpose | Model |
 |-------|---------|-------|
-| scanner | Generic scanner, invoked N times with different focus prompts | Haiku |
+| scanner | Generic scanner, invoked N times with different focus prompts | Sonnet |
 | claude-md-scan | CLAUDE.md compliance check | Haiku |
 | fixer | Apply fixes for high-confidence issues | Opus |
 
@@ -78,9 +78,9 @@ For unlisted languages, the orchestrator infers patterns from the project struct
 
 | Scenario | Agents Used | Cost |
 |----------|-------------|------|
-| Clean code (small diff) | 2-3 Haiku | $ |
-| Clean code (large/full) | 5-8 Haiku | $$ |
-| Issues found | N Haiku + 1 Opus | $$$ (only when needed) |
+| Clean code (small diff) | 2-3 Sonnet | $ |
+| Clean code (large/full) | 5-8 Sonnet | $$ |
+| Issues found | N Sonnet + 1 Opus | $$$ (only when needed) |
 | Quick mode | 0 agents | Free |
 
 ## Confidence Scoring

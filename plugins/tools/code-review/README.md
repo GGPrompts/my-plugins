@@ -61,9 +61,9 @@ Built-in pattern libraries for Go, Python, TypeScript/JavaScript, and Rust. For 
 
 | Scenario | Cost |
 |----------|------|
-| Clean code (small) | $ (2-3 Haiku) |
-| Clean code (large) | $$ (5-8 Haiku) |
-| Issues found | $$$ (N Haiku + 1 Opus) |
+| Clean code (small) | $ (2-3 Sonnet) |
+| Clean code (large) | $$ (5-8 Sonnet) |
+| Issues found | $$$ (N Sonnet + 1 Opus) |
 | Quick mode | Free (just lint/build) |
 
 ## Integration with Beads

@@ -20,8 +20,8 @@ Review code using dynamically planned scanner agents that adapt to the project's
 DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
 ```
 
-- **Clean code:** N cheap Haiku scanners, done
-- **Issues found:** N Haiku + 1 Opus fixer
+- **Clean code:** N Sonnet scanners, done
+- **Issues found:** N Sonnet + 1 Opus fixer
 
 ## Process
 
@@ -146,10 +146,10 @@ Use the **Language Pattern Library** below to populate LOOK FOR for each scanner
 **CRITICAL:** Launch ALL scanner agents in a SINGLE message for parallel execution.
 
 ```
-Task(subagent_type="code-review:scanner", model="haiku",
+Task(subagent_type="code-review:scanner", model="sonnet",
      prompt="FOCUS: Security in Go code\nPROJECT: ...\nSCOPE: ...\nLOOK FOR:\n- ...\nVERIFY: ...")
 
-Task(subagent_type="code-review:scanner", model="haiku",
+Task(subagent_type="code-review:scanner", model="sonnet",
      prompt="FOCUS: Error handling in Go code\nPROJECT: ...\nSCOPE: ...\nLOOK FOR:\n- ...")
 
 Task(subagent_type="code-review:claude-md-scan", model="haiku",
@@ -358,7 +358,7 @@ Reference this when crafting scanner prompts. Pick patterns relevant to the dete
 
 | Agent | Purpose | Model |
 |-------|---------|-------|
-| scanner | Generic scanner, invoked N times with different prompts | Haiku |
+| scanner | Generic scanner, invoked N times with different prompts | Sonnet |
 | claude-md-scan | CLAUDE.md compliance (if CLAUDE.md exists) | Haiku |
 | fixer | Apply fixes for >= 90% confidence issues | Opus |
 

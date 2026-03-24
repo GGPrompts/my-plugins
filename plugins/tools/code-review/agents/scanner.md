@@ -1,7 +1,7 @@
 ---
 name: scanner
 description: "Generic language-agnostic code scanner. Receives specialized scanning instructions via prompt. Invoke multiple instances in parallel with different focus areas for comprehensive coverage."
-model: haiku
+model: sonnet
 ---
 
 # Code Scanner
