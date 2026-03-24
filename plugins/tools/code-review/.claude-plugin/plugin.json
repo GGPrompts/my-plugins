@@ -1,5 +1,5 @@
 {
   "name": "code-review",
-  "version": "2.1.2",
-  "description": "Automated code review for beads issues with confidence-based scoring and parallel specialized agents"
+  "version": "3.0.0",
+  "description": "Language-agnostic code review with dynamic agent planning, confidence-based scoring, and parallel scanning"
 }

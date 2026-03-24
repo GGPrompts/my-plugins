@@ -1,6 +1,6 @@
 # Code Review Plugin
 
-Automated code review for beads issues with confidence-based scoring and parallel specialized agents.
+Language-agnostic code review with dynamic agent planning. Adapts to any language, framework, and codebase size.
 
 ## Structure
 
@@ -9,120 +9,92 @@ code-review/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── commands/
-│   └── code-review.md        # Main command - orchestrates review
-└── agents/
-    ├── reviewer.md            # Main reviewer (Opus) - comprehensive
-    ├── security-scan.md       # Security specialist (Haiku) - OWASP, secrets
-    └── silent-failure-scan.md # Error handling auditor (Haiku) - silent failures
+│   └── code-review.md        # Orchestrator — dynamic 7-phase review
+├── agents/
+│   ├── scanner.md             # Generic scanner (Haiku) — invoked N times
+│   ├── claude-md-scan.md      # CLAUDE.md compliance (Haiku)
+│   └── fixer.md               # Precision fixer (Opus)
+└── skills/
+    └── code-review/
+        └── SKILL.md           # User-facing skill entry point
 ```
 
 ## Usage
 
-### Basic Review
-
 ```bash
-/code-review                    # Review uncommitted changes
-/code-review <issue-id>         # Review changes for specific beads issue
-```
-
-### Thorough Review
-
-```bash
-/code-review --thorough         # Parallel specialists (3 agents)
+/code-review                          # Review uncommitted changes
+/code-review --full                   # Review entire codebase
+/code-review --files src/api tests/   # Review specific paths
+/code-review <issue-id>              # Review changes for a beads issue
+/code-review --quick                  # Fast mode: lint/build check only
 ```
 
 ## How It Works
 
-The `/code-review` command orchestrates specialized review agents:
+```
+DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
+```
 
-1. **Find scope** - Gets changed files (uncommitted or by issue-id)
-2. **Read CLAUDE.md** - Loads project conventions from relevant directories
-3. **Launch reviewers** - Spawns agents based on mode:
-   - **Standard**: Main reviewer only (Opus)
-   - **Thorough**: Main + Security + Silent Failures (1 Opus + 2 Haiku)
-4. **Collect results** - Merges findings with confidence filtering (≥80%)
-5. **Report** - Shows blockers, auto-fixes, and warnings
+1. **Discover** — auto-detects languages, frameworks, linters, build tools
+2. **Scope** — determines what to review (diff, full codebase, specific paths, issue)
+3. **Plan** — dynamically decides scanner count (2-8) and focus areas based on project context
+4. **Scan** — launches all scanners in parallel with language-specific prompts
+5. **Aggregate** — merges, deduplicates, filters findings (>= 80% confidence)
+6. **Fix** — Opus fixer runs only if issues found, uses project's native build/lint tools
+7. **Report** — clear pass/fail with categorized findings
 
-## Confidence-Based Filtering
+## Key Design: Dynamic Agents
 
-All agents score issues 0-100:
+Instead of hardcoded language-specific agents, the plugin uses one generic **scanner** agent invoked multiple times with different prompts. The orchestrator crafts each prompt based on what it discovered about the project:
 
-| Score | Meaning | Action |
-|-------|---------|--------|
-| 0-79 | False positive / uncertain | Skip |
-| 80-94 | Verified issue | **Flag** for review |
-| 95-100 | Certain bug/violation | **Auto-fix** |
+| Scope Size | Scanners |
+|------------|----------|
+| Small (<100 lines) | 2-3 |
+| Medium (100-500 lines) | 3-5 |
+| Large / full codebase | 5-8 |
 
-## Review Categories
+## Supported Languages
 
-### Main Reviewer (`code-review:reviewer`)
-- CLAUDE.md compliance
-- Bug detection (null access, logic errors, race conditions)
-- Code quality (duplication, complexity)
-- Test coverage assessment
-- Auto-fixes high-confidence issues
+Built-in pattern libraries for Go, Python, TypeScript/JavaScript, and Rust. For other languages, the orchestrator infers patterns from the project structure.
 
-### Security Scanner (`code-review:security-scan`)
-- Exposed secrets (API keys, passwords) - **BLOCKER**
-- SQL/Command/XSS injection - **BLOCKER**
-- Authentication/authorization issues
-- Data exposure in logs/responses
+## Cost Optimization
 
-### Silent Failure Hunter (`code-review:silent-failure-scan`)
-- Empty catch blocks - **BLOCKER**
-- Errors not logged
-- Users not notified of failures
-- Poor logging quality
-- Silent fallbacks
-- Mock data in production - **BLOCKER**
-
-## Output
-
-Structured JSON with:
-- `passed`: true/false (blockers present?)
-- `auto_fixed`: Issues fixed automatically (≥95% confidence)
-- `flagged`: Issues to review (80-94% confidence)
-- `blockers`: Critical issues that must be fixed
-- `needs_tests`: Test coverage assessment
-- `test_assessment`: Recommended tests with priority
+| Scenario | Cost |
+|----------|------|
+| Clean code (small) | $ (2-3 Haiku) |
+| Clean code (large) | $$ (5-8 Haiku) |
+| Issues found | $$$ (N Haiku + 1 Opus) |
+| Quick mode | Free (just lint/build) |
 
 ## Integration with Beads
 
-```bash
-# After worker completes issue
-bd view <issue-id>              
-/code-review <issue-id>         
+Prefers MCP tools when available, falls back to `bd` CLI:
 
-# If passed
-bd update <issue-id> --status reviewed
-
-# If blockers
-bd create "Fix review blockers for #<issue-id>" --depends-on <issue-id>
 ```
+# MCP preferred
+mcp__beads__show(issue_id="<issue-id>")
+/code-review <issue-id>
+mcp__beads__update(issue_id="<issue-id>", status="reviewed")
 
-## Comparison to Anthropic's Plugin
-
-| Feature | Anthropic | This Plugin |
-|---------|-----------|-------------|
-| **Purpose** | GitHub PR review | Beads issue review |
-| **Integration** | `gh` CLI for PRs | `bd` CLI for issues |
-| **Agents** | 5 Sonnet + Haiku | 1 Opus + 2 Haiku |
-| **Auto-fix** | No | Yes (≥95% confidence) |
-| **Test assessment** | No | Yes (always) |
-| **Confidence scoring** | 0-100 | 0-100 (same system) |
-| **Output** | GitHub comment | JSON + terminal |
+# CLI fallback
+bd show <issue-id> --json
+bd update <issue-id> --status=reviewed
+```
 
 ## Version History
 
-### v2.0.0 (Current)
-- Restructured to single command pattern (like Anthropic's)
-- Added security-scan and silent-failure-scan specialist agents
-- Removed fragmented skills (review, security, silent-failures, code-review)
-- Added test coverage assessment
-- Added auto-fix capability (≥95% confidence)
-- Optimized for beads workflow integration
+### v3.0.0 (Current)
+- Language-agnostic — works for Go, Python, TypeScript, Rust, and more
+- Dynamic agent planning — adapts scanner count and focus to project
+- Full codebase review mode (`--full`)
+- Single generic scanner agent replaces 5 hardcoded JS/TS agents
+- Language pattern library for crafting scanner prompts
+- Fixer uses project's native build/lint tools for verification
 
-### v1.0.0 (Legacy)
-- Multiple separate skills
-- No orchestration
-- Manual workflow
+### v2.0.0
+- 5 parallel Haiku detection agents (JS/TS-specific)
+- Opus fixer for auto-fixes
+- Beads integration
+
+### v1.0.0
+- Multiple separate skills, no orchestration

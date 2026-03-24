@@ -4,255 +4,113 @@ description: "Review code changes with parallel detection agents and smart fixin
 user-invocable: true
 ---
 
-Review code changes using parallel Haiku detection agents, with Opus fixes when issues are found.
+Language-agnostic code review with dynamic agent planning. Adapts to any language, framework, and project size.
 
 ## Usage
 
 ```bash
-/code-review                    # Review uncommitted changes
-/code-review <issue-id>         # Review changes for specific beads issue
-/code-review --files src/api src/auth   # Review specific directories/files
-/code-review --quick            # Fast mode: lint + type check only
+/code-review                          # Review uncommitted changes
+/code-review --full                   # Review entire codebase
+/code-review --files src/api tests/   # Review specific paths
+/code-review <issue-id>              # Review changes for a beads issue
+/code-review --quick                  # Fast mode: lint/build check only
 ```
 
-## Architecture
+## How It Works
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  DETECTION PHASE (5 parallel Haiku agents)          │
-│                                                     │
-│  1. claude-md-scan    - CLAUDE.md compliance        │
-│  2. bug-scan          - Bug detection               │
-│  3. security-scan     - Security vulnerabilities    │
-│  4. silent-failure-scan - Error handling issues     │
-│  5. git-context-scan  - Git history context         │
-│                                                     │
-│  → Aggregate findings, filter ≥80% confidence       │
-└─────────────────────────────────────────────────────┘
-                        │
-                        ▼
-              ┌─────────────────┐
-              │ Issues found?   │
-              └────────┬────────┘
-                       │
-           ┌───────────┴───────────┐
-           │                       │
-           ▼                       ▼
-     ┌──────────┐           ┌──────────┐
-     │   Yes    │           │    No    │
-     └────┬─────┘           └────┬─────┘
-          │                      │
-          ▼                      ▼
-  ┌───────────────┐        ┌──────────┐
-  │ OPUS: fixer   │        │  Done!   │
-  │ (apply fixes) │        │ (cheap)  │
-  └───────────────┘        └──────────┘
+DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
 ```
 
-## Process
+### 1. Discover
+Auto-detects languages, frameworks, linters, and build tools by scanning the project.
 
-### 1. Determine Scope
+### 2. Scope
+Determines what to review based on invocation mode:
+- **No args**: uncommitted changes (`git diff HEAD`)
+- **`--full`**: entire codebase (prioritizes recently changed files for large projects)
+- **`--files`**: specific paths
+- **`<issue-id>`**: changes for a beads issue (MCP `show` or `bd show`)
 
-**If `--files <paths>` provided** (for project-wide reviews):
-```bash
-# List all files in specified paths
-find <paths> -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.py" \) | head -100
+### 3. Plan
+Dynamically decides how many scanner agents (2-8) and what each focuses on, based on:
+- Project language(s) and frameworks
+- Scope size (lines changed / files to review)
+- Available linters and build tools
+- Whether CLAUDE.md exists
 
-# Read relevant CLAUDE.md files
-cat CLAUDE.md 2>/dev/null
-for path in <paths>; do
-  cat "$path/CLAUDE.md" 2>/dev/null
-done
-```
-Review ALL code in specified paths, not just changes.
+### 4. Scan
+Launches all planned agents **in parallel**:
+- **scanner** agents (Haiku) — each with a focused prompt crafted from the language pattern library
+- **claude-md-scan** (Haiku) — CLAUDE.md compliance, if applicable
 
-**If `<issue-id>` provided:**
-```bash
-bd show <issue-id>
-git diff <base>..<head>
-```
+### 5. Aggregate
+Merges findings from all agents, deduplicates, filters by confidence (>= 80%).
 
-**If no arguments:**
-```bash
-git diff HEAD
-git status --short
-```
+### 6. Fix (conditional)
+Only if issues found: launches **fixer** (Opus) with the project's build/lint commands for verification.
+- Auto-fixes >= 90% confidence
+- Adds TODO comments for 80-89%
+- Verifies fixes with project's native tools
 
-### 2. Quick Mode Check (`--quick`)
+### 7. Report
+Clear pass/fail report with categorized findings.
 
-For trivial changes, run fast checks only:
+## Agents
 
-```bash
-npx tsc --noEmit 2>&1 | grep -i error
-npm run lint 2>&1 | grep -i error
-grep -rn "api.key\|secret\|password" --include="*.ts" <changed-files>
-```
+| Agent | Purpose | Model |
+|-------|---------|-------|
+| scanner | Generic scanner, invoked N times with different focus prompts | Haiku |
+| claude-md-scan | CLAUDE.md compliance check | Haiku |
+| fixer | Apply fixes for high-confidence issues | Opus |
 
-If all pass, return immediately:
-```json
-{"passed": true, "mode": "quick", "summary": "Quick checks passed"}
-```
+## Supported Languages
 
-### 3. Launch Detection Agents (Parallel)
+Works with any language. Built-in pattern libraries for:
+- **Go** — error handling, nil deref, goroutine leaks, SQL injection
+- **Python** — bare except, mutable defaults, eval(), import cycles
+- **TypeScript/JavaScript** — empty catch, floating promises, XSS, type coercion
+- **Rust** — unwrap(), unsafe blocks, deadlocks
 
-Launch ALL 5 agents in parallel using Task tool:
-
-```markdown
-Task(subagent_type="code-review:claude-md-scan", model="haiku",
-     prompt="Check CLAUDE.md compliance for: <files>")
-
-Task(subagent_type="code-review:bug-scan", model="haiku",
-     prompt="Scan for bugs in: <files>")
-
-Task(subagent_type="code-review:security-scan", model="haiku",
-     prompt="Security scan for: <files>")
-
-Task(subagent_type="code-review:silent-failure-scan", model="haiku",
-     prompt="Check error handling in: <files>")
-
-Task(subagent_type="code-review:git-context-scan", model="haiku",
-     prompt="Check git history context for: <files>")
-```
-
-**IMPORTANT:** Launch all 5 in a SINGLE message to run in parallel.
-
-### 4. Aggregate Results
-
-Collect JSON from all agents and merge:
-
-1. **Combine findings** - Merge all `flagged` and `blockers` arrays
-2. **Deduplicate** - Same file:line from multiple agents = keep highest confidence
-3. **Filter** - Remove anything <80% confidence
-4. **Sort** - By confidence descending
-
-### 5. Decision Point
-
-**If no issues ≥80% confidence:**
-```
-✅ Code Review PASSED
-
-- Scanned by 5 agents
-- No issues found
-- Ready to proceed
-```
-STOP HERE - no Opus needed.
-
-**If issues found ≥80% confidence:**
-Continue to Step 6.
-
-### 6. Launch Fixer Agent (Opus)
-
-Only if issues were found:
-
-```markdown
-Task(subagent_type="code-review:fixer", model="opus",
-     prompt="Fix these issues: <aggregated JSON>")
-```
-
-The fixer will:
-- Auto-fix issues ≥90% confidence
-- Add TODO comments for 80-89% confidence
-- Skip issues requiring design decisions
-- Verify fixes compile
-
-### 7. Report Results
-
-#### If blockers remain:
-```
-❌ Code Review FAILED
-
-BLOCKERS (must fix):
-- [SECURITY] Exposed API key in src/config.ts:12
-- [CRITICAL] SQL injection in src/db/query.ts:45
-
-Fix these issues and run /code-review again.
-```
-
-#### If all fixed:
-```
-✅ Code Review PASSED
-
-Auto-fixed (3):
-- Empty catch block in src/api/user.ts:67
-- Missing await in src/utils/data.ts:23
-- Unused import in src/components/Form.tsx:5
-
-TODOs added (1):
-- Possible race condition in src/state/store.ts:89
-
-Ready to proceed.
-```
-
-#### If warnings only:
-```
-⚠️ Code Review PASSED with warnings
-
-Skipped for manual review (2):
-- Broad exception handling in src/api/auth.ts:34 (85% confidence)
-- Possible logic error in src/utils/calc.ts:12 (82% confidence)
-
-Review these when convenient.
-```
+For unlisted languages, the orchestrator infers patterns from the project structure and CLAUDE.md.
 
 ## Cost Optimization
 
 | Scenario | Agents Used | Cost |
 |----------|-------------|------|
-| Clean code | 5 Haiku | $ (cheap) |
-| Issues found | 5 Haiku + 1 Opus | $$ (only when needed) |
-| Quick mode | 0 agents | Free (just bash) |
+| Clean code (small diff) | 2-3 Haiku | $ |
+| Clean code (large/full) | 5-8 Haiku | $$ |
+| Issues found | N Haiku + 1 Opus | $$$ (only when needed) |
+| Quick mode | 0 agents | Free |
 
 ## Confidence Scoring
 
-All agents use consistent scoring:
-
-| Score | Meaning | Action |
-|-------|---------|--------|
-| 0-79 | Uncertain / false positive | Skip |
-| 80-89 | Verified issue | Flag + TODO comment |
-| 90-94 | High confidence | Auto-fix if safe |
-| 95-100 | Certain | Auto-fix |
+| Score | Action |
+|-------|--------|
+| 0-79 | Skip |
+| 80-89 | Flag + TODO comment |
+| 90-100 | Auto-fix |
 
 ## Integration with Beads
 
-```bash
-# After worker completes issue
-bd show <issue-id>
+Prefer MCP tools when available, fall back to CLI:
+
+```
+# Get issue context (MCP preferred)
+mcp__beads__show(issue_id="<issue-id>")
+# CLI fallback: bd show <issue-id> --json
+
 /code-review <issue-id>
 
-# If passed
-bd update <issue-id> --status=reviewed
-
-# If blockers
-bd create --title="Fix review blockers for <issue-id>" --type=bug
-```
-
-## Project-Wide Review (with Conductor)
-
-For large projects, conductor can parallelize:
-
-```
-Conductor divides project:
-├─→ Worker 1: /code-review --files src/api src/models
-├─→ Worker 2: /code-review --files src/components src/hooks
-└─→ Worker 3: /code-review --files src/utils src/lib
-```
-
-Each worker spawns its own 5 Haiku agents = 15 parallel scanners.
-
-**Example conductor prompt:**
-```
-Divide this project and run /code-review on each section:
-- src/api, src/models → high priority (auth, data)
-- src/components → medium priority
-- src/utils, src/lib → lower priority
+# If passed (MCP preferred)
+mcp__beads__update(issue_id="<issue-id>", status="reviewed")
+# CLI fallback: bd update <issue-id> --status=reviewed
 ```
 
 ## Notes
 
-- Always launch detection agents in parallel (single message, 5 Task calls)
-- Opus fixer only runs when issues are found (cost optimization)
-- Use `--quick` for config/docs changes
-- Use `--files` for project-wide reviews or conductor parallelization
-- Detection agents return JSON - parse and aggregate
-- Fixer agent makes minimal changes, preserves style
+- All scanner agents run in parallel (single message, multiple Task calls)
+- Opus fixer only runs when issues are found
+- Scanner prompts are crafted dynamically — no hardcoded language assumptions
+- Use `--quick` for trivial changes (docs, config)
+- Use `--full` for comprehensive codebase review
