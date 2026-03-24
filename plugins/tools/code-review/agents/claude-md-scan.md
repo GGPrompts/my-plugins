@@ -20,13 +20,12 @@ Your prompt may specify:
 
 ## Step 1: Find CLAUDE.md Files
 
-```bash
-# Read root CLAUDE.md
-cat CLAUDE.md 2>/dev/null
-
-# Find all CLAUDE.md files in the project
-find . -name "CLAUDE.md" -not -path "./.git/*" 2>/dev/null
+Use the Glob tool (do NOT use shell `find` — it may be aliased to `fd`):
 ```
+Glob("**/CLAUDE.md")
+```
+
+Then read each one found with the Read tool.
 
 Read each one found. **Extract explicit rules** — things like:
 - Build commands ("always use CGO_ENABLED=1")

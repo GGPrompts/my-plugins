@@ -9,8 +9,9 @@ Language-agnostic code review with dynamic agent planning. Adapts to any languag
 ## Usage
 
 ```bash
-/code-review                          # Review uncommitted changes
+/code-review                          # Interactive — asks what to review
 /code-review --full                   # Review entire codebase
+/code-review all                      # Same as --full
 /code-review --files src/api tests/   # Review specific paths
 /code-review <issue-id>              # Review changes for a beads issue
 /code-review --quick                  # Fast mode: lint/build check only
@@ -19,8 +20,11 @@ Language-agnostic code review with dynamic agent planning. Adapts to any languag
 ## How It Works
 
 ```
-DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
+SELECT → DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
 ```
+
+### 0. Select
+If no flags given, asks what to review (diff, full codebase, specific paths, beads issue, or quick check).
 
 ### 1. Discover
 Auto-detects languages, frameworks, linters, and build tools by scanning the project.

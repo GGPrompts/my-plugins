@@ -7,8 +7,9 @@ Review code using dynamically planned scanner agents that adapt to the project's
 ## Usage
 
 ```bash
-/code-review                          # Review uncommitted changes
+/code-review                          # Interactive — asks what to review
 /code-review --full                   # Review entire codebase
+/code-review all                      # Same as --full
 /code-review --files src/api tests/   # Review specific paths
 /code-review <issue-id>              # Review changes for a beads issue
 /code-review --quick                  # Fast mode: lint/build check only
@@ -17,7 +18,7 @@ Review code using dynamically planned scanner agents that adapt to the project's
 ## Architecture
 
 ```
-DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
+SELECT → DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed) → REPORT
 ```
 
 - **Clean code:** N Sonnet scanners, done
@@ -27,26 +28,66 @@ DISCOVER → SCOPE → PLAN → SCAN (parallel) → AGGREGATE → FIX (if needed
 
 Make a todo list before starting, then follow each phase.
 
+### Phase 0: MODE SELECTION
+
+If the user provided clear arguments (`--full`, `all`, `--quick`, `--files <paths>`, or an issue ID), skip this phase and use those directly.
+
+Otherwise (no arguments, or ambiguous input), ask the user to pick a review mode using AskUserQuestion:
+
+```
+What would you like to review?
+
+1. Uncommitted changes — review your current diff
+2. Entire codebase — full review of all source files
+3. Specific files/paths — you'll specify which paths
+4. Beads issue — review changes for an issue ID
+5. Quick check — lint/build only, no agents
+```
+
+Map their selection:
+- 1 → diff mode (Phase 2: no arguments)
+- 2 → full mode (Phase 2: `--full`)
+- 3 → ask follow-up for paths, then files mode (Phase 2: `--files`)
+- 4 → ask follow-up for issue ID, then issue mode (Phase 2: `<issue-id>`)
+- 5 → quick mode (jump to Quick Mode section)
+
 ### Phase 1: DISCOVER
 
-Detect the project's languages, frameworks, and tooling. Run these inline (no agent needed):
+Detect the project's languages, frameworks, and tooling. Run these inline (no agent needed).
 
-```bash
-# Detect build files
-ls go.mod Cargo.toml package.json pyproject.toml requirements.txt Makefile CMakeLists.txt build.gradle pom.xml *.cabal stack.yaml mix.exs Gemfile composer.json 2>/dev/null
+**IMPORTANT:** Do NOT use shell `find` or `grep` commands — they may be aliased (e.g., `find` → `fd`) and break. Use the **Glob** tool for file discovery and **Grep** tool for content search. Use `ls` only for listing directory contents, not for checking file existence (it returns non-zero on missing files, which cancels parallel tool calls).
 
-# Count files by language
-find . -type f \( -name "*.go" -o -name "*.py" -o -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.rs" -o -name "*.java" -o -name "*.rb" -o -name "*.cpp" -o -name "*.c" -o -name "*.cs" -o -name "*.ex" -o -name "*.exs" -o -name "*.hs" -o -name "*.php" \) -not -path "./.git/*" -not -path "*/node_modules/*" -not -path "*/vendor/*" 2>/dev/null | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -10
+Run these in parallel:
 
-# Detect available linters/build tools
-which golangci-lint go ruff mypy pylint eslint tsc cargo clippy rustfmt mix rubocop phpstan 2>/dev/null
+1. **Detect build files** — use Glob for each:
+   ```
+   Glob("go.mod")
+   Glob("Cargo.toml")
+   Glob("package.json")
+   Glob("pyproject.toml")
+   Glob("Makefile")
+   Glob("**/CLAUDE.md")
+   ```
 
-# Check for lint/build targets in Makefile
-grep -E "^[a-zA-Z_-]+:" Makefile 2>/dev/null | head -20
+2. **Count files by language** — use multiple Glob calls, then count results:
+   ```
+   Glob("**/*.rs")    # Rust
+   Glob("**/*.go")    # Go
+   Glob("**/*.py")    # Python
+   Glob("**/*.ts")    # TypeScript
+   Glob("**/*.tsx")   # React TSX
+   Glob("**/*.js")    # JavaScript
+   ```
 
-# Find CLAUDE.md files
-find . -name "CLAUDE.md" -not -path "./.git/*" 2>/dev/null
-```
+3. **Detect available linters/build tools** (this one is fine as Bash):
+   ```bash
+   which golangci-lint go ruff mypy pylint eslint tsc cargo clippy rustfmt mix rubocop phpstan 2>/dev/null
+   ```
+
+4. **Check Makefile targets** — use Grep:
+   ```
+   Grep(pattern="^[a-zA-Z_-]+:", path="Makefile")
+   ```
 
 Build a mental model:
 - **Primary language(s)** and file extensions
@@ -68,21 +109,29 @@ git diff HEAD
 ```
 Count changed lines for sizing.
 
-**`--full` (full codebase):**
-```bash
-# List source files (use discovered extensions)
-find . -type f -name "*.go" -not -path "./.git/*" -not -path "*/vendor/*" | head -200
-# Get total lines for sizing
-find . -type f -name "*.go" -not -path "./.git/*" | xargs wc -l 2>/dev/null | tail -1
+**`--full` or `all` (full codebase):**
+
+Use Glob to list source files (adapt extensions from Phase 1 discovery):
 ```
+Glob("backend/src/**/*.rs")
+Glob("frontend/src/**/*.{ts,tsx}")
+```
+
+Then count lines with `wc -l` on the discovered files:
+```bash
+wc -l <file1> <file2> ... | tail -1
+```
+
 For large codebases (>5000 LOC), prioritize recently changed files:
 ```bash
 git log --since="30 days" --name-only --pretty=format: | sort -u | head -100
 ```
 
 **`--files <paths>`:**
-```bash
-find <paths> -type f -name "*.go" | head -100
+
+Use Glob with the specified paths:
+```
+Glob("<path>/**/*.{rs,ts,tsx,go,py}")
 ```
 
 **`<issue-id>`:**
@@ -244,9 +293,9 @@ ruff check . 2>&1 | head -30
 npx tsc --noEmit 2>&1 | head -30
 ```
 
-Also check for exposed secrets:
-```bash
-grep -rn "password.*=.*['\"].\{8,\}\|api.key.*=.*['\"].\{8,\}\|secret.*=.*['\"].\{8,\}" --include="*" -l 2>/dev/null | grep -v node_modules | grep -v vendor | grep -v .git | head -10
+Also check for exposed secrets using the Grep tool:
+```
+Grep(pattern="(password|api[._-]?key|secret|token)\\s*=\\s*['\"].{8,}", glob="*.{rs,go,py,ts,tsx,js,jsx,toml,yaml,yml,json,env}")
 ```
 
 If all pass: "Quick checks passed" and STOP.
@@ -378,3 +427,5 @@ Reference this when crafting scanner prompts. Pick patterns relevant to the dete
 - Opus fixer only runs when issues are found (cost optimization)
 - Adapt scanner count and focus areas to the project — the guidelines above are not rigid rules
 - For multi-language projects, create at least one scanner per significant language
+- **Use Glob/Grep tools, not shell `find`/`grep`** — shell commands may be aliased (e.g., `find` → `fd`) and have incompatible flags. Glob and Grep are reliable across all environments.
+- **Avoid `ls` for file existence checks** — `ls` returns non-zero on missing files, which cancels parallel tool calls. Use Glob instead.
