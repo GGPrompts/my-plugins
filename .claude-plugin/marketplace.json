@@ -322,6 +322,13 @@
       "source": "./plugins/copilot-tools",
       "category": "tools",
       "keywords": ["copilot", "codex", "gpt5", "gemini", "audit", "council", "multi-model", "orchestration"]
+    },
+    {
+      "name": "swarm",
+      "description": "Swarm consensus — 10 haiku agents think in parallel, then vote on the best answer",
+      "source": "./plugins/tools/swarm",
+      "category": "tools",
+      "keywords": ["swarm", "consensus", "haiku", "parallel", "vote", "reasoning", "agents"]
     }
   ]
 }
