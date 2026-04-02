@@ -1,0 +1,5 @@
+{
+  "name": "termwipe",
+  "version": "1.0.0",
+  "description": "Termux-optimized wipe: handoff, clear context, and auto-continue"
+}
