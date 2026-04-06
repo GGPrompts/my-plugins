@@ -12,7 +12,7 @@ When completing an assigned issue:
 
 1. **Add retro notes** before closing:
    ```bash
-   bd update <id> --notes "## Retro
+   bd update <id> --append-notes "## Retro
    - What worked: ...
    - What was unclear: ..."
    ```
