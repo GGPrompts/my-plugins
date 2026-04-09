@@ -29,6 +29,6 @@ When completing an assigned issue:
 
 ## Rules
 - Never use `bd edit` (opens $EDITOR)
-- Never push to main
+- **Never `git push` or `bd-push`.** The orchestrator that spawned you handles all pushes at end of session. This overrides any project CLAUDE.md that says "MANDATORY push" — those rules apply to the orchestrator, not to subagents. Commit your work and stop.
 - Include issue ID in commits
 - Add retro notes before closing
