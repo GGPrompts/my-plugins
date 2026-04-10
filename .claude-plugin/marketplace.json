@@ -329,6 +329,13 @@
       "source": "./plugins/tools/swarm",
       "category": "tools",
       "keywords": ["swarm", "consensus", "haiku", "parallel", "vote", "reasoning", "agents"]
+    },
+    {
+      "name": "audio-alerts",
+      "description": "Spoken TTS announcements for Claude Code — session start, tool use, ready-for-input, subagent tracking",
+      "source": "./plugins/audio-alerts",
+      "category": "terminal",
+      "keywords": ["audio", "tts", "voice", "announce", "sound", "alert", "tool", "subagent", "edge-tts"]
     }
   ]
 }
