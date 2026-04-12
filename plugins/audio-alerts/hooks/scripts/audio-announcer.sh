@@ -12,6 +12,7 @@ set -euo pipefail
 
 # Portable helpers (Linux + macOS)
 portable_md5() { printf '%s' "$1" | md5sum 2>/dev/null | cut -d' ' -f1 || printf '%s' "$1" | md5 2>/dev/null; }
+file_mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0; }
 millis_now() { python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo "$(( $(date +%s) * 1000 ))"; }
 
 EVENT="${1:-unknown}"
@@ -41,24 +42,110 @@ VOICE_POOL=(
     "en-AU-WilliamNeural"
 )
 
-# Get session-consistent random voice (hash session name to pick from pool)
-get_session_voice() {
-    local session="$1"
-    local hash=$(portable_md5 "$session" | cut -c1-8)
-    local index=$((16#$hash % ${#VOICE_POOL[@]}))
-    echo "${VOICE_POOL[$index]}"
+# ═══════════════════════════════════════════════════════════════
+# VOICE ASSIGNMENT (persistent per-session, unique across terminals)
+# ═══════════════════════════════════════════════════════════════
+# Inspired by conductor-mcp's get_worker_voice() pattern:
+# - Each session gets a unique voice from the pool, persisted to disk
+# - Voices are reused round-robin when the pool is exhausted
+# - Stale assignments are cleaned up on session-start
+
+VOICE_ASSIGN_DIR="/tmp/claude-audio-voices"
+mkdir -p "$VOICE_ASSIGN_DIR"
+
+# Get a stable session identifier that's unique per terminal
+# Priority: CLAUDE_SESSION_ID > TMUX_PANE > tty > PWD hash
+get_voice_session_id() {
+    if [[ -n "${CLAUDE_SESSION_ID:-}" ]]; then
+        echo "$CLAUDE_SESSION_ID"
+    elif [[ "${TMUX_PANE:-none}" != "none" && -n "${TMUX_PANE:-}" ]]; then
+        # Sanitize tmux pane ID for filename
+        echo "$TMUX_PANE" | sed 's/[^a-zA-Z0-9_-]/_/g'
+    else
+        # Use tty — unique per terminal tab, stable within session
+        # Falls back to PWD hash if tty is unavailable (e.g. backgrounded)
+        local tty_path
+        tty_path=$(tty 2>/dev/null) || true
+        if [[ -n "$tty_path" && "$tty_path" != "not a tty" ]]; then
+            portable_md5 "$tty_path" | head -c 12
+        elif [[ -n "$PWD" ]]; then
+            portable_md5 "$PWD" | head -c 12
+        else
+            echo "fallback"
+        fi
+    fi
 }
 
+# Assign the next available voice from the pool (round-robin, avoids duplicates when possible)
+assign_voice() {
+    local session_id="$1"
+    local voice_file="$VOICE_ASSIGN_DIR/${session_id}.voice"
+
+    # Collect currently assigned voices
+    local used_voices=""
+    for f in "$VOICE_ASSIGN_DIR"/*.voice; do
+        [[ -f "$f" ]] || continue
+        [[ "$f" == "$voice_file" ]] && continue  # Skip self
+        used_voices="$used_voices|$(cat "$f" 2>/dev/null)"
+    done
+
+    # Try to find an unused voice
+    for v in "${VOICE_POOL[@]}"; do
+        if [[ "$used_voices" != *"$v"* ]]; then
+            echo "$v" > "$voice_file"
+            echo "$v"
+            return
+        fi
+    done
+
+    # All voices in use — fall back to hash-based selection for uniqueness
+    local hash=$(portable_md5 "$session_id" | cut -c1-8)
+    local index=$((16#$hash % ${#VOICE_POOL[@]}))
+    local voice="${VOICE_POOL[$index]}"
+    echo "$voice" > "$voice_file"
+    echo "$voice"
+}
+
+# Get voice for current session (read persisted or assign new)
+get_voice() {
+    local session_id="$1"
+    local voice_file="$VOICE_ASSIGN_DIR/${session_id}.voice"
+
+    if [[ -f "$voice_file" ]]; then
+        cat "$voice_file"
+    else
+        assign_voice "$session_id"
+    fi
+}
+
+# Clean up stale voice assignments (called on session-start)
+cleanup_voice_assignments() {
+    for f in "$VOICE_ASSIGN_DIR"/*.voice; do
+        [[ -f "$f" ]] || continue
+        local age=$(( $(date +%s) - $(file_mtime "$f") ))
+        # Remove assignments older than 4 hours
+        if [[ $age -gt 14400 ]]; then
+            rm -f "$f"
+        fi
+    done
+}
+
+VOICE_SESSION_ID=$(get_voice_session_id)
+
 # Apply config with env var overrides
-# Priority: CLAUDE_VOICE env > DEFAULT_VOICE from config > random per-session
+# Priority: CLAUDE_VOICE env > DEFAULT_VOICE from config > persistent per-session pool
 if [[ -n "${CLAUDE_VOICE:-}" ]]; then
     VOICE="$CLAUDE_VOICE"
 elif [[ -n "${DEFAULT_VOICE:-}" ]]; then
     VOICE="$DEFAULT_VOICE"
 else
-    # Use session name to get consistent random voice
-    SESSION_ID="${CLAUDE_SESSION_ID:-${TMUX_PANE:-$$}}"
-    VOICE=$(get_session_voice "$SESSION_ID")
+    # On session-start, clean stale assignments and assign fresh voice
+    if [[ "$EVENT" == "session-start" ]]; then
+        cleanup_voice_assignments
+        VOICE=$(assign_voice "$VOICE_SESSION_ID")
+    else
+        VOICE=$(get_voice "$VOICE_SESSION_ID")
+    fi
 fi
 RATE="${CLAUDE_RATE:-${DEFAULT_RATE:-+0%}}"
 PITCH="${CLAUDE_PITCH:-${DEFAULT_PITCH:-+0Hz}}"
@@ -84,19 +171,37 @@ mkdir -p "$AUDIO_DIR"
 # Critical announcements (ready, session-start) wait briefly
 
 AUDIO_LOCK_DIR="/tmp/claude-audio.lock.d"
+AUDIO_LOCK_STALE_SECS=10
+
+# Break stale locks from killed processes (mkdir locks don't auto-release)
+_break_stale_lock() {
+    [[ -d "$AUDIO_LOCK_DIR" ]] || return
+    local age=$(( $(date +%s) - $(file_mtime "$AUDIO_LOCK_DIR") ))
+    if [[ $age -gt $AUDIO_LOCK_STALE_SECS ]]; then
+        rmdir "$AUDIO_LOCK_DIR" 2>/dev/null || true
+    fi
+}
 
 acquire_audio_lock() {
     local wait_mode="${1:-nonblock}"
+    _break_stale_lock
     if [[ "$wait_mode" == "wait" ]]; then
         local attempts=0
         while ! mkdir "$AUDIO_LOCK_DIR" 2>/dev/null; do
             attempts=$((attempts + 1))
-            [[ $attempts -ge 30 ]] && return 1  # ~3 seconds
+            if [[ $attempts -ge 30 ]]; then
+                # Last resort: force-break and try once more
+                rmdir "$AUDIO_LOCK_DIR" 2>/dev/null || true
+                mkdir "$AUDIO_LOCK_DIR" 2>/dev/null || return 1
+                break
+            fi
             sleep 0.1
         done
     else
         mkdir "$AUDIO_LOCK_DIR" 2>/dev/null || return 1
     fi
+    # Touch the lock dir so staleness is measured from acquisition
+    touch "$AUDIO_LOCK_DIR" 2>/dev/null || true
     return 0
 }
 
@@ -116,9 +221,10 @@ should_debounce() {
     local last=$(cat "$DEBOUNCE_FILE" 2>/dev/null || echo "0")
     local diff=$((now - last))
 
-    if (( diff < DEBOUNCE_MS )); then
+    if (( diff >= 0 && diff < DEBOUNCE_MS )); then
         return 0  # Should debounce (skip this announcement)
     fi
+    # Negative diff means stale/bogus timestamp — fall through and update
 
     echo "$now" > "$DEBOUNCE_FILE"
     return 1  # Don't debounce (play this announcement)
