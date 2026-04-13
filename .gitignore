@@ -6,3 +6,6 @@ __pycache__/
 node_modules/
 .claude/*.local.md
 scripts/audit-logs/
+
+# Claude Code local settings
+.claude/settings.local.json
