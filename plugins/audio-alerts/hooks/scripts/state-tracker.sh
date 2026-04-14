@@ -21,8 +21,8 @@ mkdir -p "$STATE_DIR" "$DEBUG_DIR" "$SUBAGENT_DIR"
 TMUX_PANE="${TMUX_PANE:-none}"
 
 # Read stdin if available (contains hook data from Claude)
-# Always try to read stdin with timeout to avoid hanging
-STDIN_DATA=$(cat 2>/dev/null || echo "")
+# Explicit timeout prevents hanging if Claude keeps stdin open
+STDIN_DATA=$(timeout 1 cat 2>/dev/null || echo "")
 
 # Get session identifier - UNIFIED STRATEGY for both projects
 # Priority: 1. CLAUDE_SESSION_ID env var, 2. TMUX_PANE (for tmuxplexer), 3. Working directory hash (for terminal-tabs)
@@ -231,10 +231,10 @@ TOTAL_INPUT_TOKENS="null"
 TOTAL_OUTPUT_TOKENS="null"
 CLAUDE_SESSION_ID=""
 
-# Check if we have a previous state file with claude_session_id
-if [[ -f "$STATE_FILE" ]]; then
-    CLAUDE_SESSION_ID=$(jq -r '.claude_session_id // ""' "$STATE_FILE" 2>/dev/null || echo "")
-fi
+# Read claude_session_id from the linkage file written by statusline-script.sh
+# (avoids jq parse of our own state file and eliminates a write-write race)
+SID_FILE="$STATE_DIR/${SESSION_ID}.claude-sid"
+CLAUDE_SESSION_ID=$(cat "$SID_FILE" 2>/dev/null || echo "")
 
 # If we have claude_session_id, try to read context data
 if [[ -n "$CLAUDE_SESSION_ID" ]]; then
@@ -251,28 +251,42 @@ if [[ -n "$CLAUDE_SESSION_ID" ]]; then
     fi
 fi
 
-# Build state JSON with context data when available
-STATE_JSON=$(cat <<EOF
-{
-  "session_id": "$SESSION_ID",
-  "claude_session_id": $(if [[ -n "$CLAUDE_SESSION_ID" ]]; then echo "\"$CLAUDE_SESSION_ID\""; else echo "null"; fi),
-  "status": "$STATUS",
-  "current_tool": "$CURRENT_TOOL",
-  "subagent_count": $SUBAGENT_COUNT,
-  "context_percent": $CONTEXT_PERCENT,
-  "context_window": {
-    "size": $CONTEXT_WINDOW_SIZE,
-    "input_tokens": $TOTAL_INPUT_TOKENS,
-    "output_tokens": $TOTAL_OUTPUT_TOKENS
-  },
-  "working_dir": "$PWD",
-  "last_updated": "$TIMESTAMP",
-  "tmux_pane": "$TMUX_PANE",
-  "pid": $$,
-  "hook_type": "$HOOK_TYPE",
-  "details": $DETAILS
-}
-EOF
+# Build state JSON with jq (safe against special characters in values)
+STATE_JSON=$(jq -n \
+    --arg session_id "$SESSION_ID" \
+    --arg claude_session_id "$CLAUDE_SESSION_ID" \
+    --arg status "$STATUS" \
+    --arg current_tool "$CURRENT_TOOL" \
+    --argjson subagent_count "$SUBAGENT_COUNT" \
+    --argjson context_percent "$CONTEXT_PERCENT" \
+    --argjson context_window_size "$CONTEXT_WINDOW_SIZE" \
+    --argjson input_tokens "$TOTAL_INPUT_TOKENS" \
+    --argjson output_tokens "$TOTAL_OUTPUT_TOKENS" \
+    --arg working_dir "$PWD" \
+    --arg last_updated "$TIMESTAMP" \
+    --arg tmux_pane "$TMUX_PANE" \
+    --argjson pid ${PPID:-$$} \
+    --arg hook_type "$HOOK_TYPE" \
+    --argjson details "$DETAILS" \
+    '{
+        session_id: $session_id,
+        claude_session_id: (if $claude_session_id == "" then null else $claude_session_id end),
+        status: $status,
+        current_tool: $current_tool,
+        subagent_count: $subagent_count,
+        context_percent: $context_percent,
+        context_window: {
+            size: $context_window_size,
+            input_tokens: $input_tokens,
+            output_tokens: $output_tokens
+        },
+        working_dir: $working_dir,
+        last_updated: $last_updated,
+        tmux_pane: $tmux_pane,
+        pid: $pid,
+        hook_type: $hook_type,
+        details: $details
+    }'
 )
 
 echo "$STATE_JSON" > "$STATE_FILE"
