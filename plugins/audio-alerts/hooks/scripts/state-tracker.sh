@@ -17,6 +17,80 @@ DEBUG_DIR="$STATE_DIR/debug"
 SUBAGENT_DIR="$STATE_DIR/subagents"
 mkdir -p "$STATE_DIR" "$DEBUG_DIR" "$SUBAGENT_DIR"
 
+# --- therminal binary resolution ---
+# On WSL, only accept .exe binaries (Windows interop) to avoid silently
+# targeting a Unix socket when a Linux-compiled `therminal` is on PATH.
+# Override: THERMINAL_WINDOWS_BIN (first choice) or THERMINAL_BIN.
+_THERMINAL_HOOK_WARNED=0
+_THERMINAL_WARN_FILE="$STATE_DIR/.therminal-hook-warned"
+
+# Fire-and-forget invocation of the therminal binary.
+#
+# tn-8lyq: therminal.exe release builds are compiled with
+# `#![windows_subsystem = "windows"]`, so Windows never allocates a console
+# for them at startup — we can invoke therminal.exe directly from WSL
+# without flashing a conhost window. The earlier `cmd.exe /c start /B ""`
+# wrapper is deliberately gone: cmd.exe itself is a CONSOLE subsystem
+# binary, so wrapping through it re-introduced the exact flash we were
+# trying to hide.
+_invoke_therminal_async() {
+    local bin="$1"; shift
+    "$bin" "$@" </dev/null >/dev/null 2>&1 &
+}
+
+_resolve_therminal_bin() {
+    # 1. Explicit override
+    if [[ -n "${THERMINAL_WINDOWS_BIN:-}" ]]; then
+        echo "$THERMINAL_WINDOWS_BIN"
+        return
+    fi
+    if [[ -n "${THERMINAL_BIN:-}" ]]; then
+        echo "$THERMINAL_BIN"
+        return
+    fi
+    # 2. WSL: only accept .exe binaries
+    if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+        local bin
+        bin=$(command -v therminal.exe 2>/dev/null || true)
+        if [[ -n "$bin" ]]; then
+            echo "$bin"
+            return
+        fi
+        # 2b. Probe Windows Desktop (common install location for therminal)
+        local win_user
+        win_user=$(wslvar USERPROFILE 2>/dev/null || cmd.exe /C "echo %USERPROFILE%" 2>/dev/null | tr -d '\r' || true)
+        if [[ -n "$win_user" ]]; then
+            # Convert Windows path to WSL mount: C:\Users\X → /mnt/c/Users/X
+            local wsl_desktop
+            wsl_desktop=$(wslpath "$win_user" 2>/dev/null || echo "/mnt/c/Users/$(basename "$win_user")")/Desktop
+            if [[ -x "$wsl_desktop/therminal.exe" ]]; then
+                echo "$wsl_desktop/therminal.exe"
+                return
+            fi
+        fi
+        # No .exe found — emit one-time warning
+        if [[ ! -f "$_THERMINAL_WARN_FILE" ]]; then
+            echo "[therminal hook] WARNING: WSL detected but therminal.exe not found on PATH or Desktop." >&2
+            echo "[therminal hook] Set THERMINAL_WINDOWS_BIN to the Windows therminal.exe path." >&2
+            touch "$_THERMINAL_WARN_FILE" 2>/dev/null || true
+        fi
+        return
+    fi
+    # 3. Non-WSL: standard lookup
+    local bin
+    bin=$(command -v therminal.exe 2>/dev/null || command -v therminal 2>/dev/null || true)
+    if [[ -n "$bin" ]]; then
+        echo "$bin"
+        return
+    fi
+    # Not found — emit one-time warning
+    if [[ ! -f "$_THERMINAL_WARN_FILE" ]]; then
+        echo "[therminal hook] WARNING: therminal binary not found on PATH." >&2
+        echo "[therminal hook] Install therminal or set THERMINAL_BIN." >&2
+        touch "$_THERMINAL_WARN_FILE" 2>/dev/null || true
+    fi
+}
+
 # Get tmux pane ID if running in tmux
 TMUX_PANE="${TMUX_PANE:-none}"
 
@@ -74,8 +148,30 @@ decrement_subagent_count() {
     _subagent_lock_release
 }
 
+# ── OSC 1341 marker emission (tn-nrur) ──────────────────────────────────
+# Emit an inline OSC 1341 marker to stdout so therminal's PTY reader can
+# update pane state instantly — no file polling delay. The marker carries
+# key=value pairs separated by semicolons inside an OSC envelope:
+#   ESC ] 1341 ; key=value [ ; key=value ]* ST
+# Only emitted when TERM_PROGRAM=therminal (skip for non-therminal terminals).
+emit_osc_marker() {
+    [[ "${TERM_PROGRAM:-}" == "therminal" ]] || return 0
+    local payload=""
+    local sep=""
+    for kv in "$@"; do
+        payload="${payload}${sep}${kv}"
+        sep=";"
+    done
+    # ESC ] 1341 ; <payload> ST  (ST = ESC \)
+    printf '\033]1341;%s\033\\' "$payload" 2>/dev/null || true
+}
+
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 HOOK_TYPE="${1:-unknown}"
+
+# Carry forward existing session_title across hook calls (tn-ys0m).
+# Each hook invocation is a fresh process, so read from the state file.
+SESSION_TITLE=$(jq -r '.session_title // ""' "$STATE_FILE" 2>/dev/null || echo "")
 
 if [[ "$HOOK_TYPE" == "pre-tool" ]] || [[ "$HOOK_TYPE" == "post-tool" ]]; then
     echo "$STDIN_DATA" > "$DEBUG_DIR/${HOOK_TYPE}-$(date +%s)-$$.json" 2>/dev/null || true
@@ -111,6 +207,12 @@ case "$HOOK_TYPE" in
                 fi
             done
             find "$DEBUG_DIR" -name "*.json" -mmin +60 -delete 2>/dev/null || true
+            # Clean stale subagent count files and orphaned lock dirs
+            find "$SUBAGENT_DIR" -type f -mmin +240 -delete 2>/dev/null || true
+            find "$SUBAGENT_DIR" -maxdepth 1 -name "*.lock.d" -type d -mmin +10 -exec rmdir {} \; 2>/dev/null || true
+            # Clean stale cache-health and claude-sid files
+            find "$STATE_DIR" -maxdepth 1 -name "*-cache-health.json" -mmin +240 -delete 2>/dev/null || true
+            find "$STATE_DIR" -maxdepth 1 -name "*.claude-sid" -mmin +240 -delete 2>/dev/null || true
         ) &
         if [[ "${CLAUDE_AUDIO:-0}" == "1" ]]; then
             SESSION_NAME="${CLAUDE_SESSION_NAME:-Claude}"
@@ -122,6 +224,23 @@ case "$HOOK_TYPE" in
         CURRENT_TOOL=""
         PROMPT=$(echo "$STDIN_DATA" | jq -r '.prompt // "unknown"' 2>/dev/null || echo "unknown")
         DETAILS=$(jq -n --arg prompt "$PROMPT" '{event:"user_prompt_submitted",last_prompt:$prompt}')
+        # Extract session title from the first user prompt (tn-ys0m).
+        # Only set on first prompt — subsequent prompts ("yes", "looks good")
+        # are usually not descriptive. Persist via state file.
+        _EXISTING_TITLE=$(jq -r '.session_title // ""' "$STATE_FILE" 2>/dev/null || echo "")
+        if [[ -z "$_EXISTING_TITLE" ]]; then
+            # Try beads issue ID first (e.g. "tn-xxxx" or "bd-xxxx")
+            _TITLE=$(echo "$PROMPT" | grep -oE '\b[a-z]{2,}-[a-z0-9]{2,}\b' | head -1 || true)
+            # Try slash command (e.g. "/commit", "/review-pr 123")
+            if [[ -z "$_TITLE" ]]; then
+                _TITLE=$(echo "$PROMPT" | grep -oE '^/[a-z-]+(\s+\S+)?' | head -1 || true)
+            fi
+            # Fallback: first ~60 chars trimmed to word boundary
+            if [[ -z "$_TITLE" ]]; then
+                _TITLE=$(echo "$PROMPT" | head -c 60 | sed 's/[[:space:]][^[:space:]]*$//' | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+            fi
+            SESSION_TITLE="$_TITLE"
+        fi
         ;;
     pre-tool)
         STATUS="tool_use"
@@ -163,12 +282,30 @@ case "$HOOK_TYPE" in
         STATUS="processing"
         CURRENT_TOOL=""
         AGENT_TYPE=$(echo "$STDIN_DATA" | jq -r '.agent_type // "unknown"' 2>/dev/null || echo "unknown")
+        AGENT_ID=$(echo "$STDIN_DATA" | jq -r '.agent_id // ""' 2>/dev/null || echo "")
         DETAILS=$(jq -n --arg type "$AGENT_TYPE" --arg count "$SUBAGENT_COUNT" '{event:"subagent_started",agent_type:$type,active_subagents:($count|tonumber)}')
+        # Push to therminal daemon for fast auto-tile (fire-and-forget).
+        # Gated on TERM_PROGRAM=therminal so Claude Code sessions running in
+        # other terminals (Windows Terminal, tmux, kitty, etc.) don't cause
+        # therminal to spawn phantom subagent panes for agents that have no
+        # PTY in therminal.
+        if [[ "${TERM_PROGRAM:-}" == "therminal" ]]; then
+            _tn=$(_resolve_therminal_bin)
+            if [[ -n "$_tn" && -x "$_tn" ]]; then
+                _invoke_therminal_async "$_tn" agent-event push \
+                    --event subagent_start \
+                    --session-id "${CLAUDE_SESSION_ID:-}" \
+                    --parent-session-id "${CLAUDE_SESSION_ID:-}" \
+                    --agent-id "$AGENT_ID" \
+                    --agent-type "$AGENT_TYPE"
+            fi
+        fi
         ;;
     subagent-stop)
         decrement_subagent_count
         SUBAGENT_COUNT=$(get_subagent_count)
         CURRENT_TOOL=""
+        AGENT_ID=$(echo "$STDIN_DATA" | jq -r '.agent_id // ""' 2>/dev/null || echo "")
         # FIX: When all subagents done, set to awaiting_input (not processing)
         # This prevents stale "processing" state when session ends after subagent work
         if [[ "$SUBAGENT_COUNT" -eq 0 ]]; then
@@ -177,6 +314,17 @@ case "$HOOK_TYPE" in
         else
             STATUS="processing"
             DETAILS=$(jq -n --arg count "$SUBAGENT_COUNT" '{event:"subagent_stopped",remaining_subagents:($count|tonumber)}')
+        fi
+        # Gate matches subagent-start — see note above.
+        if [[ "${TERM_PROGRAM:-}" == "therminal" ]]; then
+            _tn=$(_resolve_therminal_bin)
+            if [[ -n "$_tn" && -x "$_tn" ]]; then
+                _invoke_therminal_async "$_tn" agent-event push \
+                    --event subagent_stop \
+                    --session-id "${CLAUDE_SESSION_ID:-}" \
+                    --parent-session-id "${CLAUDE_SESSION_ID:-}" \
+                    --agent-id "$AGENT_ID"
+            fi
         fi
         ;;
     notification)
@@ -239,7 +387,9 @@ CLAUDE_SESSION_ID=$(cat "$SID_FILE" 2>/dev/null || echo "")
 # If we have claude_session_id, try to read context data
 if [[ -n "$CLAUDE_SESSION_ID" ]]; then
     CONTEXT_FILE="$STATE_DIR/${CLAUDE_SESSION_ID}-context.json"
-    if [[ -f "$CONTEXT_FILE" ]]; then
+    # Require -s (non-empty): jq on an empty file exits 0 with empty stdout,
+    # which then feeds "" into --argjson below and blows up the whole hook.
+    if [[ -s "$CONTEXT_FILE" ]]; then
         # Check if context file is fresh (within 60 seconds)
         CONTEXT_AGE=$(($(date +%s) - $(file_mtime "$CONTEXT_FILE")))
         if [[ $CONTEXT_AGE -lt 60 ]]; then
@@ -247,8 +397,25 @@ if [[ -n "$CLAUDE_SESSION_ID" ]]; then
             CONTEXT_WINDOW_SIZE=$(jq -r '.context_window.context_window_size // "null"' "$CONTEXT_FILE" 2>/dev/null || echo "null")
             TOTAL_INPUT_TOKENS=$(jq -r '.context_window.total_input_tokens // "null"' "$CONTEXT_FILE" 2>/dev/null || echo "null")
             TOTAL_OUTPUT_TOKENS=$(jq -r '.context_window.total_output_tokens // "null"' "$CONTEXT_FILE" 2>/dev/null || echo "null")
+            # Belt-and-suspenders: normalize any empty captures to the literal
+            # JSON null so --argjson never sees "".
+            [[ -z "$CONTEXT_PERCENT"      ]] && CONTEXT_PERCENT="null"
+            [[ -z "$CONTEXT_WINDOW_SIZE"  ]] && CONTEXT_WINDOW_SIZE="null"
+            [[ -z "$TOTAL_INPUT_TOKENS"   ]] && TOTAL_INPUT_TOKENS="null"
+            [[ -z "$TOTAL_OUTPUT_TOKENS"  ]] && TOTAL_OUTPUT_TOKENS="null"
         fi
     fi
+fi
+
+# Determine PID to write. On WSL, Linux PIDs are invisible to the Windows-native
+# daemon's OpenProcess() call, so pid_is_alive() always returns false — causing
+# premature session pruning after RECENT_UPDATE_GRACE (120s) instead of allowing
+# SESSION_MAX_AGE (5 min) to govern. Write pid=0 as a sentinel so session_is_dead()
+# falls through to the timestamp-based path. (tn-1rn6)
+if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+    _HOOK_PID=0
+else
+    _HOOK_PID=${PPID:-$$}
 fi
 
 # Build state JSON with jq (safe against special characters in values)
@@ -265,8 +432,9 @@ STATE_JSON=$(jq -n \
     --arg working_dir "$PWD" \
     --arg last_updated "$TIMESTAMP" \
     --arg tmux_pane "$TMUX_PANE" \
-    --argjson pid ${PPID:-$$} \
+    --argjson pid "${_HOOK_PID}" \
     --arg hook_type "$HOOK_TYPE" \
+    --arg session_title "$SESSION_TITLE" \
     --argjson details "$DETAILS" \
     '{
         session_id: $session_id,
@@ -285,6 +453,7 @@ STATE_JSON=$(jq -n \
         tmux_pane: $tmux_pane,
         pid: $pid,
         hook_type: $hook_type,
+        session_title: (if $session_title == "" then null else $session_title end),
         details: $details
     }'
 )
@@ -296,5 +465,45 @@ if [[ "$SESSION_ID" =~ ^[a-f0-9]{12}$ ]] && [[ "$TMUX_PANE" != "none" && -n "$TM
     PANE_STATE_FILE="$STATE_DIR/${PANE_ID}.json"
     echo "$STATE_JSON" > "$PANE_STATE_FILE"
 fi
+
+# ── OSC 1341 inline markers (tn-nrur) ──────────────────────────────────
+# Emit markers to stdout so therminal picks up state changes inline with
+# the PTY stream. These are the primary signal; file polling is fallback.
+# Build the marker args array based on what we know.
+_marker_args=()
+[[ -n "$STATUS" ]] && _marker_args+=("state=$STATUS")
+[[ -n "$CLAUDE_SESSION_ID" ]] && _marker_args+=("session_id=$CLAUDE_SESSION_ID")
+[[ -n "$PWD" ]] && _marker_args+=("cwd=$PWD")
+[[ -n "$CURRENT_TOOL" ]] && _marker_args+=("tool=$CURRENT_TOOL")
+
+# Environment detection (tn-ncmj): the shell self-identifies its runtime
+# environment so the daemon knows the signal origin without crossing process
+# boundaries.
+if [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+    _marker_args+=("environment=wsl:${WSL_DISTRO_NAME}")
+elif [[ -f /.dockerenv ]]; then
+    _host=$(hostname 2>/dev/null | tr -d '\000-\037\177')
+    _marker_args+=("environment=docker:${_host:-unknown}")
+elif [[ -n "${SSH_CONNECTION:-}" ]]; then
+    _host=$(hostname 2>/dev/null | tr -d '\000-\037\177')
+    _marker_args+=("environment=ssh:${_host:-unknown}")
+else
+    _marker_args+=("environment=local")
+fi
+
+# Emit state marker (only if we have at least one field).
+if [[ ${#_marker_args[@]} -gt 0 ]]; then
+    emit_osc_marker "${_marker_args[@]}"
+fi
+
+# Emit subagent lifecycle markers.
+case "$HOOK_TYPE" in
+    subagent-start)
+        emit_osc_marker "subagent_start=$AGENT_ID" "session_id=${CLAUDE_SESSION_ID:-}"
+        ;;
+    subagent-stop)
+        emit_osc_marker "subagent_stop=$AGENT_ID" "session_id=${CLAUDE_SESSION_ID:-}"
+        ;;
+esac
 
 exit 0
