@@ -466,6 +466,155 @@ if [[ "$SESSION_ID" =~ ^[a-f0-9]{12}$ ]] && [[ "$TMUX_PANE" != "none" && -n "$TM
     echo "$STATE_JSON" > "$PANE_STATE_FILE"
 fi
 
+# ── Tier 2: durable usage ledger (oow-j92) ─────────────────────────────
+# Second write at the same hook points, for metering and audit. The live bus
+# above (/tmp/claude-code-state) is untouched: it stays ephemeral and
+# self-pruning, and this appends one JSON line per metering-relevant event to
+# ~/.claude/usage-ledger/YYYY-MM-DD.jsonl (append only, never rewritten).
+#
+# CROSSING RULE (oneops-workbench/docs/observability-design.md, section 3):
+# metadata crosses into the durable tier, content never does. The line is built
+# by WHITELISTING fields off $STATE_JSON, so details.args (commands, paths,
+# patterns) and session_title (derived from the user's prompt) cannot leak by
+# accident, and no new content field can leak by being added upstream.
+#
+# The token counts come from the statusline context file the live tier already
+# reads, so they are cumulative-per-session and up to 60s stale. Per-turn cost
+# is deliberately null: no hook event receives usage/cost in stdin (upstream
+# gap, see therminal docs/integrations/claude-code-hooks-audit.md).
+#
+# NON-BLOCKING AND FAILURE-SILENT: this fires inside every hook of every
+# session, so a ledger problem must never break a turn or the live bus. The
+# body is an isolating subshell with errexit off and all output discarded, and
+# the call site adds `|| true`.
+_ledger_append() (
+    set +e
+    local payload="$1"
+    local state="$2"
+    local dir="${CLAUDE_USAGE_LEDGER_DIR:-${HOME:-}/.claude/usage-ledger}"
+    [[ -n "$dir" ]] || return 0
+    # Create on first use only: an unconditional mkdir would fork on every
+    # event of every session for nothing. 700 because this is a per-user
+    # usage record, even though it holds no content.
+    if [[ ! -d "$dir" ]]; then
+        mkdir -p "$dir" || return 0
+        chmod 700 "$dir" 2>/dev/null
+    fi
+
+    # Day bucket off the already-computed timestamp (no extra fork).
+    local day="${TIMESTAMP%%T*}"
+    [[ "$day" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || day=$(date -u +%Y-%m-%d)
+
+    # Hook-payload METADATA only. .tool_input, .tool_response bodies and
+    # .prompt are never read here. tool_error is the only thing taken off the
+    # response, and it is reduced to a boolean before it leaves this block.
+    local meta
+    meta=$(printf '%s' "$payload" | jq -c '{
+        tool_name: (.tool_name // null),
+        tool_use_id: (.tool_use_id // null),
+        prompt_id: (.prompt_id // null),
+        agent_id: (.agent_id // null),
+        agent_type: (.agent_type // null),
+        permission_mode: (.permission_mode // null),
+        effort: (if (.effort | type) == "object" then (.effort.level // null)
+                 else (.effort // null) end),
+        duration_ms: (.duration_ms // null),
+        tool_error: (if (.tool_response | type) == "object"
+                     then (.tool_response.is_error == true
+                           or .tool_response.interrupted == true)
+                     else null end)
+    }' 2>/dev/null)
+    # An unparseable payload still gets a line, with the payload-side fields
+    # null: a stable key set matters more to consumers than a missing row.
+    [[ -n "$meta" ]] || meta='{}'
+
+    # Model: the harness exports ANTHROPIC_MODEL in the Vertex lane, so prefer
+    # it. Otherwise take the last model id in the transcript tail (bounded read,
+    # best effort, null if it cannot be read).
+    local model="${ANTHROPIC_MODEL:-}"
+    if [[ -z "$model" ]]; then
+        local transcript="" agent=""
+        IFS=$'\t' read -r transcript agent < <(printf '%s' "$payload" \
+            | jq -r '[(.transcript_path // ""), (.agent_id // "")] | @tsv' 2>/dev/null)
+        # A subagent's hook payload carries the PARENT session transcript, so
+        # reading that would bill the subagent's turn to the parent's model
+        # (they differ routinely: an opus worker under a fable orchestrator).
+        # The per-agent transcript sits beside it and has the right one.
+        if [[ -n "$transcript" && -n "$agent" ]]; then
+            local sub="${transcript%.jsonl}/subagents/agent-${agent}.jsonl"
+            [[ -f "$sub" ]] && transcript="$sub"
+        fi
+        if [[ -n "$transcript" && -f "$transcript" ]]; then
+            model=$(tail -c 262144 "$transcript" 2>/dev/null \
+                | grep -oE '"model":"[A-Za-z0-9._:@/-]{3,64}"' \
+                | tail -1 | cut -d'"' -f4)
+        fi
+    fi
+    [[ "$model" =~ ^[A-Za-z0-9._:@/-]+$ ]] || model=""
+
+    # Routing, for the reconciliation in section 4 of the design doc: a ledger
+    # row that claims vertex should have a matching vertex_audit entry.
+    local provider="anthropic"
+    if [[ "${CLAUDE_CODE_USE_VERTEX:-}" == "1" ]]; then
+        provider="vertex"
+    elif [[ "${CLAUDE_CODE_USE_BEDROCK:-}" == "1" ]]; then
+        provider="bedrock"
+    fi
+
+    local line
+    line=$(printf '%s' "$state" | jq -c \
+        --argjson meta "$meta" \
+        --arg model "$model" \
+        --arg provider "$provider" \
+        --arg region "${CLOUD_ML_REGION:-${AWS_REGION:-}}" \
+        --arg gcp_project "${ANTHROPIC_VERTEX_PROJECT_ID:-}" \
+        --arg os_user "${USER:-}" \
+        --arg host "${HOSTNAME:-}" \
+        '{
+            schema_version: 1,
+            session_id,
+            claude_session_id,
+            hook_type,
+            event: (.details.event // null),
+            status,
+            current_tool,
+            subagent_count,
+            context_percent,
+            context_window,
+            working_dir,
+            tmux_pane,
+            last_updated,
+            tool_name: null,
+            tool_use_id: null,
+            prompt_id: null,
+            agent_id: null,
+            agent_type: null,
+            permission_mode: null,
+            effort: null,
+            duration_ms: null,
+            tool_error: null
+        }
+        + $meta
+        + {
+            model: (if $model == "" then null else $model end),
+            provider: $provider,
+            region: (if $region == "" then null else $region end),
+            gcp_project: (if $gcp_project == "" then null else $gcp_project end),
+            cost_usd: null,
+            os_user: (if $os_user == "" then null else $os_user end),
+            host: (if $host == "" then null else $host end)
+        }' 2>/dev/null)
+    [[ -n "$line" ]] || return 0
+
+    # Single printf of a single short line: O_APPEND makes concurrent writes
+    # from parallel sessions non-interleaving, so no lock is needed.
+    printf '%s\n' "$line" >> "$dir/${day}.jsonl"
+)
+
+case "$HOOK_TYPE" in
+    post-tool|stop) _ledger_append "$STDIN_DATA" "$STATE_JSON" >/dev/null 2>&1 || true ;;
+esac
+
 # ── OSC 1341 inline markers (tn-nrur) ──────────────────────────────────
 # Emit markers to stdout so therminal picks up state changes inline with
 # the PTY stream. These are the primary signal; file polling is fallback.
