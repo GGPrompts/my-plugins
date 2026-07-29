@@ -203,6 +203,12 @@ MCP servers support multiple transport mechanisms for different deployment scena
 
 ### Server-Sent Events (SSE) Transport
 
+> **DEPRECATED (spec 2026-07-28).** The standalone HTTP+SSE transport is formally
+> deprecated; use Streamable HTTP for anything remote. Note also that SSE stream
+> resumability (`Last-Event-ID`) was removed from Streamable HTTP: a broken stream
+> means the client re-issues the request, so design tools to be retry-safe. See
+> `spec_2026_07_28.md`. The section below is retained for maintaining older servers.
+
 **Best for**: Real-time updates, push notifications, streaming data
 
 **Characteristics**:
@@ -367,6 +373,11 @@ MCP servers that connect to external services should implement proper authentica
 
 ## 11. Resource Management Best Practices
 
+> **Note (spec 2026-07-28):** Roots are DEPRECATED — take directories/files as tool
+> parameters, resource URIs, or server configuration instead. Resource list/read
+> results now require `ttlMs` + `cacheScope`, and `resources/subscribe` was replaced
+> by the client-side `subscriptions/listen` stream. See `spec_2026_07_28.md`.
+
 1. Only suggest necessary resources
 2. Use clear, descriptive names for roots
 3. Handle resource boundaries properly
@@ -376,6 +387,11 @@ MCP servers that connect to external services should implement proper authentica
 ---
 
 ## 12. Prompt Management Best Practices
+
+> **Note (spec 2026-07-28):** Sampling (`sampling/createMessage`) is DEPRECATED — new
+> servers should integrate directly with an LLM provider API instead. Mid-request input
+> from the user now uses the MRTR pattern (`resultType: "input_required"`), not
+> server-initiated elicitation. See `spec_2026_07_28.md`.
 
 - Clients should show users proposed prompts
 - Users should be able to modify or reject prompts

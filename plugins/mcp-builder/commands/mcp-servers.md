@@ -18,6 +18,7 @@ Create high-quality MCP servers that enable LLMs to effectively interact with ex
 
 | Topic | Reference |
 |-------|-----------|
+| **Spec revision 2026-07-28 (stateless MCP, MRTR, deprecations, MCP Apps) — read FIRST, overrides older guidance** | [references/spec_2026_07_28.md](${CLAUDE_PLUGIN_ROOT}/references/spec_2026_07_28.md) |
 | Universal guidelines, naming, response formats | [references/mcp_best_practices.md](${CLAUDE_PLUGIN_ROOT}/references/mcp_best_practices.md) |
 | Python/FastMCP implementation | [references/python_mcp_server.md](${CLAUDE_PLUGIN_ROOT}/references/python_mcp_server.md) |
 | Node/TypeScript implementation | [references/node_mcp_server.md](${CLAUDE_PLUGIN_ROOT}/references/node_mcp_server.md) |
@@ -55,7 +56,8 @@ Create high-quality MCP servers that enable LLMs to effectively interact with ex
 ### Phase 1: Research and Planning
 
 1. **Study MCP Protocol**: Fetch `https://modelcontextprotocol.io/llms-full.txt`
-2. **Load best practices**: Read [references/mcp_best_practices.md](${CLAUDE_PLUGIN_ROOT}/references/mcp_best_practices.md)
+2. **Load the current-spec addendum**: Read [references/spec_2026_07_28.md](${CLAUDE_PLUGIN_ROOT}/references/spec_2026_07_28.md) — the other references predate the 2026-07-28 stateless revision; where they conflict, the addendum wins
+3. **Load best practices**: Read [references/mcp_best_practices.md](${CLAUDE_PLUGIN_ROOT}/references/mcp_best_practices.md)
 3. **Study target API**: Read ALL available documentation
 4. **Create implementation plan**: Tool selection, shared utilities, I/O design, error handling
 
